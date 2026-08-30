@@ -7,6 +7,15 @@ products (name / colour / weight). Packaged as a single executable JAR via
 Maven's `assembly` plugin; no external database server required — data is
 stored locally in a SQLite file.
 
+## Download (Windows install package)
+
+Download the ready-to-run package — **not** the "Source code" zip — from:
+
+**https://github.com/lectek/Inventory_Management/releases/download/v1.0.2/IMS-1.0.2-win.zip**
+
+It contains `IMS-1.0.2.jar`, `ims_files/` (config + sample DB) and
+`INSTALL.txt`. See [Installing on Windows](#installing-on-windows) below.
+
 ## Release notes
 
 - Interface with 3 views — Production, Dispatch and Stock.
