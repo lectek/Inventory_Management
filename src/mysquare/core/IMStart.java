@@ -48,7 +48,7 @@ public class IMStart {
 	}
 
 	public static void main(String[] args) {
-        final String dev_msg = "Inventory Management System (IMS) v1.0.2\nAn open source project developed by Yash Modi\n\nVisit https://github.com/yashnmodi/Inventory_Management";	    frame.setTitle("Raj Blow Plast");
+        final String dev_msg = "Inventory Management System (IMS) v1.0.3\n\nLegacy software originally created by Yash Modi.\nCurrent application continued and developed by lectek.\n\nVisit https://github.com/lectek/Inventory_Management";	    frame.setTitle("Raj Blow Plast");
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         frame.setSize(900, 500);
         frame.setJMenuBar(mb);
