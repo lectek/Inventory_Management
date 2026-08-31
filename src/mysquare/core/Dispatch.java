@@ -67,20 +67,43 @@ public class Dispatch {
                 String product = cb1.getSelectedItem().toString();
                 String colour = cb2.getSelectedItem().toString();
                 String weight = cb3.getSelectedItem().toString();
-                int qty = Integer.parseInt(tf1.getText());
+                int qty;
                 try {
-                    ResultSet dataNew = Db.sellProduct(product, colour, weight, qty);
-                    model.setRowCount(0);
-                    while(dataNew.next()) {
-                        model.addRow(new Object[]{dataNew.getString(1), dataNew.getString(2), dataNew.getString(3), dataNew.getString(4), dataNew.getString(5)});
-                    }
-                } catch (Exception e) {
-                    try {
-                        throw new Exception("Unable to sell product.");
-                    } catch (Exception ex) {
-                        ex.printStackTrace();
-                    }
+                    qty = Integer.parseInt(tf1.getText());
+                } catch (NumberFormatException nfe) {
+                    JOptionPane.showMessageDialog(IMStart.frame, "Enter a valid quantity.", "WARNING", JOptionPane.WARNING_MESSAGE);
+                    return;
                 }
+
+                rmvBtn.setEnabled(false);
+                panel.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+                new SwingWorker<java.util.List<Object[]>, Void>() {
+                    @Override
+                    protected java.util.List<Object[]> doInBackground() throws Exception {
+                        ResultSet dataNew = Db.sellProduct(product, colour, weight, qty);
+                        java.util.List<Object[]> rows = new java.util.ArrayList<>();
+                        while (dataNew.next()) {
+                            rows.add(new Object[]{dataNew.getString(1), dataNew.getString(2), dataNew.getString(3), dataNew.getString(4), dataNew.getString(5)});
+                        }
+                        return rows;
+                    }
+
+                    @Override
+                    protected void done() {
+                        panel.setCursor(Cursor.getDefaultCursor());
+                        rmvBtn.setEnabled(true);
+                        try {
+                            model.setRowCount(0);
+                            for (Object[] row : get()) {
+                                model.addRow(row);
+                            }
+                        } catch (InterruptedException ie) {
+                            Thread.currentThread().interrupt();
+                        } catch (java.util.concurrent.ExecutionException e) {
+                            JOptionPane.showMessageDialog(IMStart.frame, "Unable to sell product.", "ERROR", JOptionPane.ERROR_MESSAGE);
+                        }
+                    }
+                }.execute();
             }
         });
         panel.setBackground(new Color(239,176,137));

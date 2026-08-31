@@ -2,11 +2,35 @@ package mysquare.core;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.sql.ResultSet;
 
 public class ModifyProducts {
+
+    private static <T> void runAsync(JComponent panel, JButton button, java.util.concurrent.Callable<T> task,
+                                      java.util.function.Consumer<T> onSuccess, java.util.function.Consumer<Exception> onError) {
+        button.setEnabled(false);
+        panel.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+        new SwingWorker<T, Void>() {
+            @Override
+            protected T doInBackground() throws Exception {
+                return task.call();
+            }
+
+            @Override
+            protected void done() {
+                panel.setCursor(Cursor.getDefaultCursor());
+                button.setEnabled(true);
+                try {
+                    onSuccess.accept(get());
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                } catch (java.util.concurrent.ExecutionException ee) {
+                    Exception cause = ee.getCause() instanceof Exception ? (Exception) ee.getCause() : ee;
+                    onError.accept(cause);
+                }
+            }
+        }.execute();
+    }
 
     public static JPanel getPanel(){
         JPanel panel = new JPanel();
@@ -90,90 +114,96 @@ public class ModifyProducts {
         panel.add(price);
         panel.add(saveProduct);
 
-        addProduct.addActionListener(e -> {
-            try {
-                Db.addItem("product_list", product.getText());
-                product.setText("");
-            } catch (Exception err) {
-                JOptionPane.showConfirmDialog(IMStart.frame, "Product already added.\nERROR:"+err.getMessage(),"WARNING",JOptionPane.WARNING_MESSAGE );
-            }
-        });
-        addColour.addActionListener(e -> {
-            try {
-                Db.addItem("colour_list", colour.getText());
-                colour.setText("");
-            } catch (Exception err) {
-                JOptionPane.showConfirmDialog(IMStart.frame, "Colour already added.\nERROR:"+err.getMessage(),"WARNING",JOptionPane.WARNING_MESSAGE );
-            }
-        });
-        addWeight.addActionListener(e -> {
-            try {
-                Db.addItem("weight_list", weight.getText());
-                weight.setText("");
-            } catch (Exception err) {
-                JOptionPane.showConfirmDialog(IMStart.frame, "Weight already added.\nERROR:"+err.getMessage(),"WARNING",JOptionPane.WARNING_MESSAGE );
-            }
-        });
-        rmvProduct.addActionListener(e -> {
-            try {
-                Db.removeItem("product_list","pname", product.getText());
-                product.setText("");
-            } catch (Exception err) {
-                JOptionPane.showConfirmDialog(IMStart.frame, "Product not found.\nERROR:"+err.getMessage(),"WARNING",JOptionPane.WARNING_MESSAGE );
-            }
-        });
-        rmvColour.addActionListener(e -> {
-            try {
-                Db.removeItem("colour_list", "pclr", colour.getText());
-                colour.setText("");
-            } catch (Exception err) {
-                JOptionPane.showConfirmDialog(IMStart.frame, "Colour not found.\nERROR:"+err.getMessage(),"WARNING",JOptionPane.WARNING_MESSAGE );
-            }
-        });
-        rmvWeight.addActionListener(e -> {
-            try {
-                Db.removeItem("weight_list", "pwt", weight.getText());
-                weight.setText("");
-            } catch (Exception err) {
-                JOptionPane.showConfirmDialog(IMStart.frame, "Weight not found.\nERROR:"+err.getMessage(),"WARNING",JOptionPane.WARNING_MESSAGE );
-            }
-        });
+        addProduct.addActionListener(e -> runAsync(panel, addProduct,
+                () -> { Db.addItem("product_list", product.getText()); return null; },
+                v -> product.setText(""),
+                err -> JOptionPane.showConfirmDialog(IMStart.frame, "Product already added.\nERROR:"+err.getMessage(),"WARNING",JOptionPane.WARNING_MESSAGE)));
+        addColour.addActionListener(e -> runAsync(panel, addColour,
+                () -> { Db.addItem("colour_list", colour.getText()); return null; },
+                v -> colour.setText(""),
+                err -> JOptionPane.showConfirmDialog(IMStart.frame, "Colour already added.\nERROR:"+err.getMessage(),"WARNING",JOptionPane.WARNING_MESSAGE)));
+        addWeight.addActionListener(e -> runAsync(panel, addWeight,
+                () -> { Db.addItem("weight_list", weight.getText()); return null; },
+                v -> weight.setText(""),
+                err -> JOptionPane.showConfirmDialog(IMStart.frame, "Weight already added.\nERROR:"+err.getMessage(),"WARNING",JOptionPane.WARNING_MESSAGE)));
+        rmvProduct.addActionListener(e -> runAsync(panel, rmvProduct,
+                () -> { Db.removeItem("product_list","pname", product.getText()); return null; },
+                v -> product.setText(""),
+                err -> JOptionPane.showConfirmDialog(IMStart.frame, "Product not found.\nERROR:"+err.getMessage(),"WARNING",JOptionPane.WARNING_MESSAGE)));
+        rmvColour.addActionListener(e -> runAsync(panel, rmvColour,
+                () -> { Db.removeItem("colour_list", "pclr", colour.getText()); return null; },
+                v -> colour.setText(""),
+                err -> JOptionPane.showConfirmDialog(IMStart.frame, "Colour not found.\nERROR:"+err.getMessage(),"WARNING",JOptionPane.WARNING_MESSAGE)));
+        rmvWeight.addActionListener(e -> runAsync(panel, rmvWeight,
+                () -> { Db.removeItem("weight_list", "pwt", weight.getText()); return null; },
+                v -> weight.setText(""),
+                err -> JOptionPane.showConfirmDialog(IMStart.frame, "Weight not found.\nERROR:"+err.getMessage(),"WARNING",JOptionPane.WARNING_MESSAGE)));
 
         loadProduct.addActionListener(e -> {
+            String[] key;
             try {
-                String[] key = parseProductKey(products.getSelectedItem());
-                ResultSet data = Db.fetchProduct(key[0], key[1], key[2]);
-                if (data.next()) {
-                    newProduct.setText(data.getString("pname"));
-                    newColour.setText(data.getString("pclr"));
-                    newWeight.setText(data.getString("pwt"));
-                    code.setText(nullToEmpty(data.getString("pcode")));
-                    description.setText(nullToEmpty(data.getString("pdesc")));
-                    String value = data.getString("pprice");
-                    price.setText(value == null ? "0" : value);
-                }
+                key = parseProductKey(products.getSelectedItem());
             } catch (Exception err) {
-                JOptionPane.showConfirmDialog(IMStart.frame, "Unable to load product.\nERROR:"+err.getMessage(),"WARNING",JOptionPane.WARNING_MESSAGE );
+                JOptionPane.showConfirmDialog(IMStart.frame, "Unable to load product.\nERROR:"+err.getMessage(),"WARNING",JOptionPane.WARNING_MESSAGE);
+                return;
             }
+            runAsync(panel, loadProduct,
+                    () -> {
+                        ResultSet data = Db.fetchProduct(key[0], key[1], key[2]);
+                        if (!data.next()) {
+                            return null;
+                        }
+                        String value = data.getString("pprice");
+                        return new String[]{data.getString("pname"), data.getString("pclr"), data.getString("pwt"),
+                                nullToEmpty(data.getString("pcode")), nullToEmpty(data.getString("pdesc")), value == null ? "0" : value};
+                    },
+                    fields -> {
+                        if (fields != null) {
+                            newProduct.setText(fields[0]);
+                            newColour.setText(fields[1]);
+                            newWeight.setText(fields[2]);
+                            code.setText(fields[3]);
+                            description.setText(fields[4]);
+                            price.setText(fields[5]);
+                        }
+                    },
+                    err -> JOptionPane.showConfirmDialog(IMStart.frame, "Unable to load product.\nERROR:"+err.getMessage(),"WARNING",JOptionPane.WARNING_MESSAGE));
         });
 
         saveProduct.addActionListener(e -> {
+            String[] key;
+            double updatedPrice;
             try {
-                String[] key = parseProductKey(products.getSelectedItem());
-                String updatedProduct = newProduct.getText().trim();
-                String updatedColour = newColour.getText().trim();
-                String updatedWeight = newWeight.getText().trim();
-                if (updatedProduct.isEmpty() || updatedColour.isEmpty() || updatedWeight.isEmpty()) {
-                    throw new Exception("Product, colour and weight are required.");
-                }
-                double updatedPrice = parsePrice(price.getText());
-                Db.updateProduct(key[0], key[1], key[2], updatedProduct, updatedColour, updatedWeight,
-                        code.getText().trim(), description.getText().trim(), updatedPrice);
-                products.setModel(new DefaultComboBoxModel<ProductOption>(getProductKeys()));
-                JOptionPane.showMessageDialog(IMStart.frame, "Product updated successfully.");
+                key = parseProductKey(products.getSelectedItem());
             } catch (Exception err) {
-                JOptionPane.showConfirmDialog(IMStart.frame, "Unable to update product.\nERROR:"+err.getMessage(),"WARNING",JOptionPane.WARNING_MESSAGE );
+                JOptionPane.showConfirmDialog(IMStart.frame, "Unable to update product.\nERROR:"+err.getMessage(),"WARNING",JOptionPane.WARNING_MESSAGE);
+                return;
             }
+            String updatedProduct = newProduct.getText().trim();
+            String updatedColour = newColour.getText().trim();
+            String updatedWeight = newWeight.getText().trim();
+            if (updatedProduct.isEmpty() || updatedColour.isEmpty() || updatedWeight.isEmpty()) {
+                JOptionPane.showConfirmDialog(IMStart.frame, "Unable to update product.\nERROR:Product, colour and weight are required.","WARNING",JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            try {
+                updatedPrice = parsePrice(price.getText());
+            } catch (Exception err) {
+                JOptionPane.showConfirmDialog(IMStart.frame, "Unable to update product.\nERROR:"+err.getMessage(),"WARNING",JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            String codeText = code.getText().trim();
+            String descText = description.getText().trim();
+            runAsync(panel, saveProduct,
+                    () -> {
+                        Db.updateProduct(key[0], key[1], key[2], updatedProduct, updatedColour, updatedWeight, codeText, descText, updatedPrice);
+                        return getProductKeys();
+                    },
+                    keys -> {
+                        products.setModel(new DefaultComboBoxModel<ProductOption>(keys));
+                        JOptionPane.showMessageDialog(IMStart.frame, "Product updated successfully.");
+                    },
+                    err -> JOptionPane.showConfirmDialog(IMStart.frame, "Unable to update product.\nERROR:"+err.getMessage(),"WARNING",JOptionPane.WARNING_MESSAGE));
         });
         panel.setBackground(new Color(239,214,186));
         return panel;

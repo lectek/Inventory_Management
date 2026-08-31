@@ -1,6 +1,6 @@
 # Inventory Management (IMS)
 
-Version 1.0.2 — built with Java Swing + SQLite.
+Version 1.0.3 — built with Java Swing + SQLite.
 
 Stand-alone desktop app for tracking production, dispatch and stock of
 products (name / colour / weight). Packaged as a single executable JAR via
@@ -11,13 +11,20 @@ stored locally in a SQLite file.
 
 Download the ready-to-run package — **not** the "Source code" zip — from:
 
-**https://github.com/lectek/Inventory_Management/releases/download/v1.0.2/IMS-1.0.2-win.zip**
+**https://github.com/lectek/Inventory_Management/releases/download/v1.0.3/IMS-1.0.3-win.zip**
 
-It contains `IMS-1.0.2.jar`, `ims_files/` (config + sample DB) and
+It contains `IMS-1.0.3.jar`, `ims_files/` (config + sample DB) and
 `INSTALL.txt`. See [Installing on Windows](#installing-on-windows) below.
 
 ## Release notes
 
+- **1.0.3:** Fixed UI freezing when adding/removing a product, dispatching
+  stock, or editing the product catalog — those actions used to run the
+  SQLite query directly on the Swing UI thread, so the whole window would
+  hang until the disk write finished (worse the larger the history table
+  got, and worse still if antivirus real-time scanning was slowing down
+  file writes). They now run on a background thread while the affected
+  button is disabled, so the interface stays responsive.
 - Interface with 3 views — Production, Dispatch and Stock.
 - Real-time changes in product, colour and weight dropdown.
 - Loosely coupled component architecture.
@@ -55,7 +62,7 @@ sample-data/
 mvn clean package
 ```
 
-This produces `target/IMS-1.0.2.jar`, a fat JAR with all dependencies
+This produces `target/IMS-1.0.3.jar`, a fat JAR with all dependencies
 (including the SQLite driver) and `mysquare.core.IMStart` as the main class.
 
 ## Configuration — read this carefully
@@ -98,12 +105,12 @@ SQLite file); only the location of `config.properties` itself is fixed.
      `rbp-sample.db` to `rbp.db` and place it there to start with an empty
      database.
 
-3. Create `C:\ControleEstoque\programa\` and place `IMS-1.0.2.jar` inside.
+3. Create `C:\ControleEstoque\programa\` and place `IMS-1.0.3.jar` inside.
 
 4. Run it:
    ```cmd
    cd /d C:\ControleEstoque\programa
-   java -jar IMS-1.0.2.jar
+   java -jar IMS-1.0.3.jar
    ```
 
 5. On first connection the app auto-migrates the `products` table (adds
@@ -120,6 +127,6 @@ in this repository.
 
 ## Releasing
 
-See the project's release process for how `IMS-1.0.2.jar` +
+See the project's release process for how `IMS-1.0.3.jar` +
 `ims_files/config.properties` + `sample-data/rbp-sample.db` are packaged
 into a downloadable ZIP for installation.
