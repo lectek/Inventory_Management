@@ -14,11 +14,11 @@ public class Production {
     public static JTable getProductionView() throws Exception{
         model = new DefaultTableModel();
         JTable table = new JTable(model);
-        model.addColumn("MANUFACTURED ON");
-        model.addColumn("PRODUCT");
-        model.addColumn("COLOUR");
-        model.addColumn("WEIGHT");
-        model.addColumn("QUANTITY");
+        model.addColumn("FABRICADO EM");
+        model.addColumn("PRODUTO");
+        model.addColumn("COR");
+        model.addColumn("PESO");
+        model.addColumn("QUANTIDADE");
 
         ResultSet data = null;
         try {
@@ -30,7 +30,7 @@ public class Production {
             throw new Exception(e.getMessage());
         }
         table.setGridColor(Theme.BORDER);
-        table.setRowHeight(24);
+        table.setRowHeight(Theme.TABLE_ROW_HEIGHT);
         table.setFont(Theme.FONT_TABLE);
         table.getTableHeader().setFont(Theme.FONT_TABLE_HEADER);
         table.getTableHeader().setBackground(Theme.TABLE_HEADER_BG);
@@ -40,7 +40,10 @@ public class Production {
     }
 
     public static JPanel getProductionPanel() throws Exception{
-        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 6));
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 8));
+        JPanel column = new JPanel();
+        column.setLayout(new BoxLayout(column, BoxLayout.Y_AXIS));
+        column.setOpaque(false);
         Utility obj = new Utility();
         JComboBox<String> cb1 = new JComboBox<String>(obj.getProductList());
         JComboBox<String> cb2 = new JComboBox<String>(obj.getColourList());
@@ -54,19 +57,30 @@ public class Production {
         JTextField descriptionField = new JTextField(14);
         JTextField priceField = new JTextField(6);
 
-        panel.add(Theme.labeledField("Product (new or existing)", cb1));
-        panel.add(Theme.labeledField("Colour (new or existing)", cb2));
-        panel.add(Theme.labeledField("Weight (new or existing)", cb3));
-        panel.add(Theme.labeledField("Quantity", tf1));
-        panel.add(Theme.labeledField("Code (optional)", codeField));
-        panel.add(Theme.labeledField("Description (optional)", descriptionField));
-        panel.add(Theme.labeledField("Price (optional)", priceField));
+        JPanel row1 = new JPanel(new FlowLayout(FlowLayout.CENTER, 24, 8));
+        row1.setOpaque(false);
+        row1.setAlignmentX(Component.CENTER_ALIGNMENT);
+        row1.add(Theme.labeledField("Produto (novo ou existente)", cb1));
+        row1.add(Theme.labeledField("Cor (nova ou existente)", cb2));
+        row1.add(Theme.labeledField("Peso (novo ou existente)", cb3));
+        row1.add(Theme.labeledField("Quantidade", tf1));
 
-        JButton addBtn = new JButton("Add product");
+        JButton addBtn = new JButton("Adicionar produto");
         addBtn.setFont(Theme.FONT_BUTTON);
         addBtn.setBackground(Theme.ACCENT);
         addBtn.setForeground(Color.WHITE);
-        panel.add(addBtn);
+
+        JPanel row2 = new JPanel(new FlowLayout(FlowLayout.CENTER, 24, 8));
+        row2.setOpaque(false);
+        row2.setAlignmentX(Component.CENTER_ALIGNMENT);
+        row2.add(Theme.labeledField("Código (opcional)", codeField));
+        row2.add(Theme.labeledField("Descrição (opcional)", descriptionField));
+        row2.add(Theme.labeledField("Preço (opcional)", priceField));
+        row2.add(addBtn);
+
+        column.add(row1);
+        column.add(row2);
+        panel.add(column);
 
         addBtn.addActionListener(new ActionListener() {
             @Override
@@ -79,14 +93,14 @@ public class Production {
                 String priceText = priceField.getText().trim();
 
                 if (product.isEmpty() || colour.isEmpty() || weight.isEmpty()) {
-                    JOptionPane.showMessageDialog(IMStart.frame, "Product, colour and weight are required.", "WARNING", JOptionPane.WARNING_MESSAGE);
+                    JOptionPane.showMessageDialog(IMStart.frame, "Produto, cor e peso são obrigatórios.", "AVISO", JOptionPane.WARNING_MESSAGE);
                     return;
                 }
                 int qty;
                 try {
                     qty = Integer.parseInt(tf1.getText().trim());
                 } catch (NumberFormatException nfe) {
-                    JOptionPane.showMessageDialog(IMStart.frame, "Enter a valid quantity.", "WARNING", JOptionPane.WARNING_MESSAGE);
+                    JOptionPane.showMessageDialog(IMStart.frame, "Informe uma quantidade válida.", "AVISO", JOptionPane.WARNING_MESSAGE);
                     return;
                 }
                 final boolean hasDetails = !code.isEmpty() || !description.isEmpty() || !priceText.isEmpty();
@@ -96,7 +110,7 @@ public class Production {
                     try {
                         parsed = priceText.isEmpty() ? 0 : ModifyProducts.parsePrice(priceText);
                     } catch (Exception err) {
-                        JOptionPane.showMessageDialog(IMStart.frame, "Invalid price.", "WARNING", JOptionPane.WARNING_MESSAGE);
+                        JOptionPane.showMessageDialog(IMStart.frame, "Preço inválido.", "AVISO", JOptionPane.WARNING_MESSAGE);
                         return;
                     }
                     price = parsed;
@@ -143,14 +157,14 @@ public class Production {
                         } catch (InterruptedException ie) {
                             Thread.currentThread().interrupt();
                         } catch (java.util.concurrent.ExecutionException e) {
-                            JOptionPane.showMessageDialog(IMStart.frame, "Unable to add product.", "ERROR", JOptionPane.ERROR_MESSAGE);
+                            JOptionPane.showMessageDialog(IMStart.frame, "Não foi possível adicionar o produto.", "ERRO", JOptionPane.ERROR_MESSAGE);
                         }
                     }
                 }.execute();
             }
         });
         panel.setBackground(Theme.SURFACE);
-        panel.setBorder(Theme.sectionBorder("Add product"));
+        panel.setBorder(Theme.sectionBorder("Adicionar produto"));
         return panel;
     }
 

@@ -17,7 +17,7 @@ public class Utility {
 		HashMap<String, String> properties = new HashMap<String, String>();
 
 		try {
-			FileInputStream ip = new FileInputStream("C:/ims_files/config.properties");
+			FileInputStream ip = new FileInputStream(configFilePath());
 			if (ip != null) {
 				prop.load(ip);
 				System.out.println(System.getProperty("os.name"));
@@ -32,6 +32,19 @@ public class Utility {
 			System.out.println("Exception: " + e);
 		}
 		return properties;
+	}
+
+	/**
+	 * Windows keeps the original fixed path the production install relies on.
+	 * Any other OS (used for local dev/testing on Linux/macOS) reads from the
+	 * user's home directory instead, since "C:/..." isn't a real path there.
+	 */
+	private static String configFilePath() {
+		String os = System.getProperty("os.name", "").toLowerCase();
+		if (os.contains("win")) {
+			return "C:/ims_files/config.properties";
+		}
+		return System.getProperty("user.home") + "/ims_files/config.properties";
 	}
 
 	public String[] getProductList() {

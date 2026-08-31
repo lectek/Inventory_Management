@@ -14,11 +14,11 @@ public class Dispatch {
     public static JTable getDispatchView() throws Exception{
         model = new DefaultTableModel();
         JTable table = new JTable(model);
-        model.addColumn("DISPATCHED ON");
-        model.addColumn("PRODUCT");
-        model.addColumn("COLOUR");
-        model.addColumn("WEIGHT");
-        model.addColumn("QUANTITY");
+        model.addColumn("DESPACHADO EM");
+        model.addColumn("PRODUTO");
+        model.addColumn("COR");
+        model.addColumn("PESO");
+        model.addColumn("QUANTIDADE");
 
         ResultSet data = null;
         try {
@@ -30,7 +30,7 @@ public class Dispatch {
             throw new Exception(e.getMessage());
         }
         table.setGridColor(Theme.BORDER);
-        table.setRowHeight(24);
+        table.setRowHeight(Theme.TABLE_ROW_HEIGHT);
         table.setFont(Theme.FONT_TABLE);
         table.getTableHeader().setFont(Theme.FONT_TABLE_HEADER);
         table.getTableHeader().setBackground(Theme.TABLE_HEADER_BG);
@@ -40,7 +40,7 @@ public class Dispatch {
     }
 
     public static JPanel getDispatchPanel(){
-        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 6));
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 24, 8));
         Utility obj = new Utility();
         JComboBox<String> cb1 = new JComboBox<String>(obj.getProductList());
         JComboBox<String> cb2 = new JComboBox<String>(obj.getColourList());
@@ -48,12 +48,12 @@ public class Dispatch {
 
         JTextField tf1 = new JTextField(5);
 
-        panel.add(Theme.labeledField("Product", cb1));
-        panel.add(Theme.labeledField("Colour", cb2));
-        panel.add(Theme.labeledField("Weight", cb3));
-        panel.add(Theme.labeledField("Quantity", tf1));
+        panel.add(Theme.labeledField("Produto", cb1));
+        panel.add(Theme.labeledField("Cor", cb2));
+        panel.add(Theme.labeledField("Peso", cb3));
+        panel.add(Theme.labeledField("Quantidade", tf1));
 
-        JButton rmvBtn = new JButton("Dispatch");
+        JButton rmvBtn = new JButton("Despachar");
         rmvBtn.setFont(Theme.FONT_BUTTON);
         rmvBtn.setBackground(Theme.ACCENT);
         rmvBtn.setForeground(Color.WHITE);
@@ -69,7 +69,7 @@ public class Dispatch {
                 try {
                     qty = Integer.parseInt(tf1.getText());
                 } catch (NumberFormatException nfe) {
-                    JOptionPane.showMessageDialog(IMStart.frame, "Enter a valid quantity.", "WARNING", JOptionPane.WARNING_MESSAGE);
+                    JOptionPane.showMessageDialog(IMStart.frame, "Informe uma quantidade válida.", "AVISO", JOptionPane.WARNING_MESSAGE);
                     return;
                 }
 
@@ -98,14 +98,14 @@ public class Dispatch {
                         } catch (InterruptedException ie) {
                             Thread.currentThread().interrupt();
                         } catch (java.util.concurrent.ExecutionException e) {
-                            JOptionPane.showMessageDialog(IMStart.frame, "Unable to sell product.", "ERROR", JOptionPane.ERROR_MESSAGE);
+                            JOptionPane.showMessageDialog(IMStart.frame, "Não foi possível despachar o produto.", "ERRO", JOptionPane.ERROR_MESSAGE);
                         }
                     }
                 }.execute();
             }
         });
         panel.setBackground(Theme.SURFACE);
-        panel.setBorder(Theme.sectionBorder("Dispatch stock"));
+        panel.setBorder(Theme.sectionBorder("Despachar estoque"));
         return panel;
     }
 }

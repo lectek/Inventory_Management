@@ -76,20 +76,6 @@ public class Db {
 		addListItemIfMissing(conn, table, columnName, value);
 	}
 
-	public static void addItem(String table, String value) throws Exception {
-		Connection conn = connect();
-		Statement stat = conn.createStatement();
-		String sql = "INSERT INTO "+table+" VALUES ('"+value+"');";
-		stat.executeUpdate(sql);
-	}
-
-	public static void removeItem(String table, String columnName, String value) throws Exception {
-		Connection conn = connect();
-		Statement stat = conn.createStatement();
-		String sql = " DELETE FROM "+table+" WHERE "+columnName+"='"+value+"';";
-		stat.executeUpdate(sql);
-	}
-
 	public static ResultSet fetchProducts() throws SQLException {
 		Connection conn = connect();
 		Statement stat = conn.createStatement();
@@ -107,6 +93,13 @@ public class Db {
 
 	public static void updateProduct(String oldProduct, String oldColour, String oldWeight, String newProduct,
 								 String newColour, String newWeight, String code, String description, double price) throws Exception {
+		updateProduct(oldProduct, oldColour, oldWeight, newProduct, newColour, newWeight, code, description, price, null);
+	}
+
+	/** Same as the 9-arg overload, but also sets pqt to an absolute value when qty is non-null. */
+	public static void updateProduct(String oldProduct, String oldColour, String oldWeight, String newProduct,
+								 String newColour, String newWeight, String code, String description, double price,
+								 Integer qty) throws Exception {
 		Connection conn = connect();
 		boolean oldAutoCommit = conn.getAutoCommit();
 		conn.setAutoCommit(false);
@@ -142,17 +135,26 @@ public class Db {
 			addListItemIfMissing(conn, "colour_list", "pclr", newColour);
 			addListItemIfMissing(conn, "weight_list", "pwt", newWeight);
 
-			PreparedStatement update = conn.prepareStatement(
-					"UPDATE products SET pname=?, pclr=?, pwt=?, pcode=?, pdesc=?, pprice=? WHERE pname=? AND pclr=? AND pwt=?;");
+			String sql = qty == null
+					? "UPDATE products SET pname=?, pclr=?, pwt=?, pcode=?, pdesc=?, pprice=? WHERE pname=? AND pclr=? AND pwt=?;"
+					: "UPDATE products SET pname=?, pclr=?, pwt=?, pcode=?, pdesc=?, pprice=?, pqt=? WHERE pname=? AND pclr=? AND pwt=?;";
+			PreparedStatement update = conn.prepareStatement(sql);
 			update.setString(1, newProduct);
 			update.setString(2, newColour);
 			update.setString(3, newWeight);
 			update.setString(4, code);
 			update.setString(5, description);
 			update.setDouble(6, price);
-			update.setString(7, oldProduct);
-			update.setString(8, oldColour);
-			update.setString(9, oldWeight);
+			if (qty == null) {
+				update.setString(7, oldProduct);
+				update.setString(8, oldColour);
+				update.setString(9, oldWeight);
+			} else {
+				update.setInt(7, qty);
+				update.setString(8, oldProduct);
+				update.setString(9, oldColour);
+				update.setString(10, oldWeight);
+			}
 			update.executeUpdate();
 			update.close();
 			conn.commit();
@@ -162,6 +164,15 @@ public class Db {
 		} finally {
 			conn.setAutoCommit(oldAutoCommit);
 		}
+	}
+
+	public static void deleteProduct(String product, String colour, String weight) throws SQLException {
+		Connection conn = connect();
+		PreparedStatement ps = conn.prepareStatement("DELETE FROM products WHERE pname=? AND pclr=? AND pwt=?;");
+		ps.setString(1, product);
+		ps.setString(2, colour);
+		ps.setString(3, weight);
+		ps.executeUpdate();
 	}
 
 	private static void addListItemIfMissing(Connection conn, String tableName, String columnName, String value) throws SQLException {

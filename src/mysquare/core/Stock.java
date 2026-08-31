@@ -10,13 +10,13 @@ public class Stock {
     public static JTable getStockView() throws Exception{
         DefaultTableModel model = new DefaultTableModel();
         JTable table = new JTable(model);
-        model.addColumn("PRODUCT");
-        model.addColumn("COLOUR");
-        model.addColumn("WEIGHT");
-        model.addColumn("QUANTITY");
-        model.addColumn("CODE");
-        model.addColumn("DESCRIPTION");
-        model.addColumn("PRICE");
+        model.addColumn("PRODUTO");
+        model.addColumn("COR");
+        model.addColumn("PESO");
+        model.addColumn("QUANTIDADE");
+        model.addColumn("CÓDIGO");
+        model.addColumn("DESCRIÇÃO");
+        model.addColumn("PREÇO");
         ResultSet data = null;
         try {
             data = Db.fetchProducts();
@@ -28,7 +28,7 @@ public class Stock {
             throw new Exception(e.getMessage());
         }
         table.setGridColor(Theme.BORDER);
-        table.setRowHeight(24);
+        table.setRowHeight(Theme.TABLE_ROW_HEIGHT);
         table.setFont(Theme.FONT_TABLE);
         table.getTableHeader().setFont(Theme.FONT_TABLE_HEADER);
         table.getTableHeader().setBackground(Theme.TABLE_HEADER_BG);

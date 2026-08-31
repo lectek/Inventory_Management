@@ -1,23 +1,39 @@
 # Inventory Management (IMS)
 
-Version 1.0.5 — built with Java Swing + SQLite.
+Version 1.0.6 — built with Java Swing + SQLite.
 
-Stand-alone desktop app for tracking production, dispatch and stock of
-products (name / colour / weight). Packaged as a single executable JAR via
-Maven's `assembly` plugin; no external database server required — data is
-stored locally in a SQLite file.
+Stand-alone desktop app for tracking sales, production, dispatch and stock
+of products (name / colour / weight). Packaged as a single executable JAR
+via Maven's `assembly` plugin; no external database server required — data
+is stored locally in a SQLite file. The interface (menus, labels, messages)
+is in Brazilian Portuguese.
 
 ## Download (Windows install package)
 
 Download the ready-to-run package — **not** the "Source code" zip — from:
 
-**https://github.com/lectek/Inventory_Management/releases/download/v1.0.5/IMS-1.0.5-win.zip**
+**https://github.com/lectek/Inventory_Management/releases/download/v1.0.6/IMS-1.0.6-win.zip**
 
-It contains `IMS-1.0.5.jar`, `ims_files/` (config + sample DB) and
+It contains `IMS-1.0.6.jar`, `ims_files/` (config + sample DB) and
 `INSTALL.txt`. See [Installing on Windows](#installing-on-windows) below.
 
 ## Release notes
 
+- **1.0.6:** Full Portuguese (pt-BR) translation of the interface (menus,
+  labels, buttons, table headers, warning/error messages). Added a new
+  **Sale** screen — add items to a running sale, see the running total,
+  then confirm (deducts stock for every line item) or cancel (no changes).
+  Redesigned "Modify products" into a single edit/delete form for an
+  existing product (name, colour, weight, quantity, code, price,
+  description together) and removed the separate raw pick-list
+  add/remove section, which no longer had a purpose once Production could
+  register new values directly. Every screen footer now has a "Como usar"
+  help button and a developer credit link. Text and buttons enlarged
+  (~2x from the original) with a wider default window and centred,
+  better-spaced forms, since the app is meant to be read from a distance
+  at a store counter. Runs on Linux/macOS for development and testing too
+  — `Utility.configFilePath()` now falls back to `~/ims_files/` on
+  non-Windows systems (Windows keeps the exact original fixed path).
 - **1.0.5:** Redesigned add-product flow and overall look. The Production
   screen is now a single form (product, colour, weight, quantity, plus
   optional code/description/price) with editable dropdowns — adding a
@@ -72,7 +88,7 @@ sample-data/
 mvn clean package
 ```
 
-This produces `target/IMS-1.0.5.jar`, a fat JAR with all dependencies
+This produces `target/IMS-1.0.6.jar`, a fat JAR with all dependencies
 (including the SQLite driver) and `mysquare.core.IMStart` as the main class.
 
 ## Configuration — read this carefully
@@ -115,12 +131,12 @@ SQLite file); only the location of `config.properties` itself is fixed.
      `rbp-sample.db` to `rbp.db` and place it there to start with an empty
      database.
 
-3. Create `C:\ControleEstoque\programa\` and place `IMS-1.0.5.jar` inside.
+3. Create `C:\ControleEstoque\programa\` and place `IMS-1.0.6.jar` inside.
 
 4. Run it:
    ```cmd
    cd /d C:\ControleEstoque\programa
-   java -jar IMS-1.0.5.jar
+   java -jar IMS-1.0.6.jar
    ```
 
 5. On first connection the app auto-migrates the `products` table (adds
@@ -137,6 +153,6 @@ in this repository.
 
 ## Releasing
 
-See the project's release process for how `IMS-1.0.5.jar` +
+See the project's release process for how `IMS-1.0.6.jar` +
 `ims_files/config.properties` + `sample-data/rbp-sample.db` are packaged
 into a downloadable ZIP for installation.
