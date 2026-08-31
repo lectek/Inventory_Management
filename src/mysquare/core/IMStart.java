@@ -39,18 +39,24 @@ public class IMStart {
 		mb.add(m2);
 		mb.add(m3);
 		mb.add(m4);
-		m2i1.setBackground(new Color(239,214,186));
-        m2i2.setBackground(new Color(239,214,186));
-        m2i3.setBackground(new Color(239,214,186));
-        m3i1.setBackground(new Color(239,214,186));
-        m4i1.setBackground(new Color(239,214,186));
-        mb.setBackground(new Color(239,176,137));
+		m2i1.setBackground(Theme.TABLE_HEADER_BG);
+        m2i2.setBackground(Theme.TABLE_HEADER_BG);
+        m2i3.setBackground(Theme.TABLE_HEADER_BG);
+        m3i1.setBackground(Theme.TABLE_HEADER_BG);
+        m4i1.setBackground(Theme.TABLE_HEADER_BG);
+        mb.setBackground(Theme.SURFACE);
 	}
 
 	public static void main(String[] args) {
+        Theme.applyLookAndFeel();
+        SwingUtilities.updateComponentTreeUI(frame);
+        SwingUtilities.updateComponentTreeUI(mb);
+
         final String dev_msg = "Inventory Management System (IMS) v1.0.3\n\nLegacy software originally created by Yash Modi.\nCurrent application continued and developed by lectek.\n\nVisit https://github.com/lectek/Inventory_Management";	    frame.setTitle("Raj Blow Plast");
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        frame.setSize(900, 500);
+        frame.setSize(1000, 560);
+        frame.setLocationRelativeTo(null);
+        frame.getContentPane().setBackground(Theme.BACKGROUND);
         frame.setJMenuBar(mb);
 
         try {

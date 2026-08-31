@@ -29,36 +29,34 @@ public class Dispatch {
         } catch (Exception e) {
             throw new Exception(e.getMessage());
         }
-        table.setGridColor(new Color(239,214,186));
+        table.setGridColor(Theme.BORDER);
+        table.setRowHeight(24);
+        table.setFont(Theme.FONT_TABLE);
+        table.getTableHeader().setFont(Theme.FONT_TABLE_HEADER);
+        table.getTableHeader().setBackground(Theme.TABLE_HEADER_BG);
+        table.setSelectionBackground(Theme.ACCENT);
+        table.setSelectionForeground(Color.WHITE);
         return table;
     }
 
     public static JPanel getDispatchPanel(){
-        JPanel panel = new JPanel();
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 6));
         Utility obj = new Utility();
         JComboBox<String> cb1 = new JComboBox<String>(obj.getProductList());
         JComboBox<String> cb2 = new JComboBox<String>(obj.getColourList());
         JComboBox<String> cb3 = new JComboBox<String>(obj.getWeightList());
 
-        // Components Added using Flow Layout
-        JLabel lab1 = new JLabel("Product");
-        panel.add(lab1);
-        panel.add(cb1);
-
-        JLabel lab2 = new JLabel("Colour");
-        panel.add(lab2);
-        panel.add(cb2);
-
-        JLabel lab3 = new JLabel("Weight");
-        panel.add(lab3);
-        panel.add(cb3);
-
-        JLabel lab4 = new JLabel("Quantity");
         JTextField tf1 = new JTextField(5);
-        panel.add(lab4);
-        panel.add(tf1);
 
-        JButton rmvBtn = new JButton("Remove");
+        panel.add(Theme.labeledField("Product", cb1));
+        panel.add(Theme.labeledField("Colour", cb2));
+        panel.add(Theme.labeledField("Weight", cb3));
+        panel.add(Theme.labeledField("Quantity", tf1));
+
+        JButton rmvBtn = new JButton("Dispatch");
+        rmvBtn.setFont(Theme.FONT_BUTTON);
+        rmvBtn.setBackground(Theme.ACCENT);
+        rmvBtn.setForeground(Color.WHITE);
         panel.add(rmvBtn);
 
         rmvBtn.addActionListener(new ActionListener() {
@@ -106,7 +104,8 @@ public class Dispatch {
                 }.execute();
             }
         });
-        panel.setBackground(new Color(239,176,137));
+        panel.setBackground(Theme.SURFACE);
+        panel.setBorder(Theme.sectionBorder("Dispatch stock"));
         return panel;
     }
 }

@@ -27,7 +27,13 @@ public class Stock {
         } catch (Exception e) {
             throw new Exception(e.getMessage());
         }
-        table.setGridColor(new Color(239,214,186));
+        table.setGridColor(Theme.BORDER);
+        table.setRowHeight(24);
+        table.setFont(Theme.FONT_TABLE);
+        table.getTableHeader().setFont(Theme.FONT_TABLE_HEADER);
+        table.getTableHeader().setBackground(Theme.TABLE_HEADER_BG);
+        table.setSelectionBackground(Theme.ACCENT);
+        table.setSelectionForeground(Color.WHITE);
         return table;
     }
 }

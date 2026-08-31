@@ -29,50 +29,79 @@ public class Production {
         } catch (Exception e) {
             throw new Exception(e.getMessage());
         }
-        table.setGridColor(new Color(239,214,186));
+        table.setGridColor(Theme.BORDER);
+        table.setRowHeight(24);
+        table.setFont(Theme.FONT_TABLE);
+        table.getTableHeader().setFont(Theme.FONT_TABLE_HEADER);
+        table.getTableHeader().setBackground(Theme.TABLE_HEADER_BG);
+        table.setSelectionBackground(Theme.ACCENT);
+        table.setSelectionForeground(Color.WHITE);
         return table;
     }
 
     public static JPanel getProductionPanel() throws Exception{
-        JPanel panel = new JPanel();
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 6));
         Utility obj = new Utility();
         JComboBox<String> cb1 = new JComboBox<String>(obj.getProductList());
         JComboBox<String> cb2 = new JComboBox<String>(obj.getColourList());
         JComboBox<String> cb3 = new JComboBox<String>(obj.getWeightList());
+        cb1.setEditable(true);
+        cb2.setEditable(true);
+        cb3.setEditable(true);
 
-        // Components Added using Flow Layout
-        JLabel lab1 = new JLabel("Product");
-        panel.add(lab1);
-        panel.add(cb1);
-
-        JLabel lab2 = new JLabel("Colour");
-        panel.add(lab2);
-        panel.add(cb2);
-
-        JLabel lab3 = new JLabel("Weight");
-        panel.add(lab3);
-        panel.add(cb3);
-
-        JLabel lab4 = new JLabel("Quantity");
         JTextField tf1 = new JTextField(5);
-        panel.add(lab4);
-        panel.add(tf1);
+        JTextField codeField = new JTextField(8);
+        JTextField descriptionField = new JTextField(14);
+        JTextField priceField = new JTextField(6);
 
-        JButton addBtn = new JButton("Add");
+        panel.add(Theme.labeledField("Product (new or existing)", cb1));
+        panel.add(Theme.labeledField("Colour (new or existing)", cb2));
+        panel.add(Theme.labeledField("Weight (new or existing)", cb3));
+        panel.add(Theme.labeledField("Quantity", tf1));
+        panel.add(Theme.labeledField("Code (optional)", codeField));
+        panel.add(Theme.labeledField("Description (optional)", descriptionField));
+        panel.add(Theme.labeledField("Price (optional)", priceField));
+
+        JButton addBtn = new JButton("Add product");
+        addBtn.setFont(Theme.FONT_BUTTON);
+        addBtn.setBackground(Theme.ACCENT);
+        addBtn.setForeground(Color.WHITE);
         panel.add(addBtn);
 
         addBtn.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent arg0) {
-                String product = cb1.getSelectedItem().toString();
-                String colour = cb2.getSelectedItem().toString();
-                String weight = cb3.getSelectedItem().toString();
+                String product = cb1.getEditor().getItem().toString().trim();
+                String colour = cb2.getEditor().getItem().toString().trim();
+                String weight = cb3.getEditor().getItem().toString().trim();
+                String code = codeField.getText().trim();
+                String description = descriptionField.getText().trim();
+                String priceText = priceField.getText().trim();
+
+                if (product.isEmpty() || colour.isEmpty() || weight.isEmpty()) {
+                    JOptionPane.showMessageDialog(IMStart.frame, "Product, colour and weight are required.", "WARNING", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
                 int qty;
                 try {
-                    qty = Integer.parseInt(tf1.getText());
+                    qty = Integer.parseInt(tf1.getText().trim());
                 } catch (NumberFormatException nfe) {
                     JOptionPane.showMessageDialog(IMStart.frame, "Enter a valid quantity.", "WARNING", JOptionPane.WARNING_MESSAGE);
                     return;
+                }
+                final boolean hasDetails = !code.isEmpty() || !description.isEmpty() || !priceText.isEmpty();
+                final double price;
+                if (hasDetails) {
+                    double parsed;
+                    try {
+                        parsed = priceText.isEmpty() ? 0 : ModifyProducts.parsePrice(priceText);
+                    } catch (Exception err) {
+                        JOptionPane.showMessageDialog(IMStart.frame, "Invalid price.", "WARNING", JOptionPane.WARNING_MESSAGE);
+                        return;
+                    }
+                    price = parsed;
+                } else {
+                    price = 0;
                 }
 
                 addBtn.setEnabled(false);
@@ -80,10 +109,17 @@ public class Production {
                 new SwingWorker<java.util.List<Object[]>, Void>() {
                     @Override
                     protected java.util.List<Object[]> doInBackground() throws Exception {
+                        Db.ensureListItem("product_list", "pname", product);
+                        Db.ensureListItem("colour_list", "pclr", colour);
+                        Db.ensureListItem("weight_list", "pwt", weight);
                         ResultSet dataNew = Db.addProduct(product, colour, weight, qty);
                         java.util.List<Object[]> rows = new java.util.ArrayList<>();
                         while (dataNew.next()) {
                             rows.add(new Object[]{dataNew.getString(1), dataNew.getString(2), dataNew.getString(3), dataNew.getString(4), dataNew.getString(5)});
+                        }
+                        if (hasDetails) {
+                            // Leaves code/description/price untouched on restock unless the operator typed something.
+                            Db.updateProduct(product, colour, weight, product, colour, weight, code, description, price);
                         }
                         return rows;
                     }
@@ -97,6 +133,13 @@ public class Production {
                             for (Object[] row : get()) {
                                 model.addRow(row);
                             }
+                            if (!containsItem(cb1, product)) cb1.addItem(product);
+                            if (!containsItem(cb2, colour)) cb2.addItem(colour);
+                            if (!containsItem(cb3, weight)) cb3.addItem(weight);
+                            tf1.setText("");
+                            codeField.setText("");
+                            descriptionField.setText("");
+                            priceField.setText("");
                         } catch (InterruptedException ie) {
                             Thread.currentThread().interrupt();
                         } catch (java.util.concurrent.ExecutionException e) {
@@ -106,7 +149,17 @@ public class Production {
                 }.execute();
             }
         });
-        panel.setBackground(new Color(239,176,137));
+        panel.setBackground(Theme.SURFACE);
+        panel.setBorder(Theme.sectionBorder("Add product"));
         return panel;
+    }
+
+    private static boolean containsItem(JComboBox<String> box, String value) {
+        for (int i = 0; i < box.getItemCount(); i++) {
+            if (value.equals(box.getItemAt(i))) {
+                return true;
+            }
+        }
+        return false;
     }
 }

@@ -70,6 +70,12 @@ public class Db {
 		return rs;	
 	}
 	
+	/** Inserts value into table.columnName only if it isn't already there; safe to call with an existing value. */
+	public static void ensureListItem(String table, String columnName, String value) throws SQLException {
+		Connection conn = connect();
+		addListItemIfMissing(conn, table, columnName, value);
+	}
+
 	public static void addItem(String table, String value) throws Exception {
 		Connection conn = connect();
 		Statement stat = conn.createStatement();

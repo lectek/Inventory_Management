@@ -205,7 +205,7 @@ public class ModifyProducts {
                     },
                     err -> JOptionPane.showConfirmDialog(IMStart.frame, "Unable to update product.\nERROR:"+err.getMessage(),"WARNING",JOptionPane.WARNING_MESSAGE));
         });
-        panel.setBackground(new Color(239,214,186));
+        panel.setBackground(Theme.BACKGROUND);
         return panel;
     }
 
@@ -234,7 +234,7 @@ public class ModifyProducts {
         return value == null ? "" : value;
     }
 
-    private static double parsePrice(String value) throws Exception {
+    static double parsePrice(String value) throws Exception {
         String cleanValue = value.trim().replace(",", ".");
         if (cleanValue.isEmpty()) {
             return 0;
