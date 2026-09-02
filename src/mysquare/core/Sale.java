@@ -5,6 +5,7 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.sql.ResultSet;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 
@@ -169,23 +170,78 @@ public class Sale {
                 JOptionPane.showMessageDialog(IMStart.frame, "Adicione pelo menos um item primeiro.", "AVISO", JOptionPane.WARNING_MESSAGE);
                 return;
             }
-            int confirm = JOptionPane.showConfirmDialog(IMStart.frame,
-                    "Confirmar venda de " + cart.size() + " item(ns) no valor total de " + totalLabel.getText().substring("Total: ".length()) + "?",
-                    "Confirmar venda", JOptionPane.YES_NO_OPTION);
-            if (confirm != JOptionPane.YES_OPTION) {
+            double total = 0;
+            for (CartLine line : cart) {
+                total += line.subtotal();
+            }
+            String totalFormatado = String.format(PT_BR, "%.2f", total);
+
+            Object[] opcoes = {"Dinheiro", "Pix", "Cancelar"};
+            int escolha = JOptionPane.showOptionDialog(IMStart.frame,
+                    "Confirmar venda de " + cart.size() + " item(ns) no valor total de " + totalFormatado + ".\nForma de pagamento:",
+                    "Confirmar venda", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, opcoes, opcoes[0]);
+            if (escolha != 0 && escolha != 1) {
                 return;
             }
 
+            List<CartLine> toSell = new ArrayList<CartLine>(cart);
+            Runnable darBaixaNoEstoque = () -> {
+                confirmBtn.setEnabled(false);
+                root.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+                new SwingWorker<Void, Void>() {
+                    @Override
+                    protected Void doInBackground() throws Exception {
+                        for (CartLine line : toSell) {
+                            Db.sellProduct(line.product, line.colour, line.weight, line.qty);
+                        }
+                        return null;
+                    }
+
+                    @Override
+                    protected void done() {
+                        root.setCursor(Cursor.getDefaultCursor());
+                        confirmBtn.setEnabled(true);
+                        try {
+                            get();
+                            cart.clear();
+                            cartModel.setRowCount(0);
+                            recalcTotal.run();
+                            JOptionPane.showMessageDialog(IMStart.frame, "Venda confirmada. Estoque atualizado.");
+                        } catch (Exception ex) {
+                            JOptionPane.showMessageDialog(IMStart.frame, "Não foi possível confirmar a venda.\n" + ex.getMessage(), "ERRO", JOptionPane.ERROR_MESSAGE);
+                        }
+                    }
+                }.execute();
+            };
+
+            if (escolha == 0) {
+                darBaixaNoEstoque.run();
+                return;
+            }
+
+            HashMap<String, String> props;
+            try {
+                props = new Utility().getProperties();
+            } catch (Exception ex) {
+                props = new HashMap<String, String>();
+            }
+            String accessToken = props.get("mpAccessToken");
+            if (accessToken == null || accessToken.trim().isEmpty()) {
+                JOptionPane.showMessageDialog(IMStart.frame,
+                        "Pix não configurado. Defina MP_ACCESS_TOKEN em config.properties.",
+                        "AVISO", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            String payerEmail = props.get("mpPayerEmail");
+            MercadoPagoPixClient mpClient = new MercadoPagoPixClient(accessToken, payerEmail);
+            double totalPix = total;
+
             confirmBtn.setEnabled(false);
             root.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-            List<CartLine> toSell = new ArrayList<CartLine>(cart);
-            new SwingWorker<Void, Void>() {
+            new SwingWorker<MercadoPagoPixClient.PixCharge, Void>() {
                 @Override
-                protected Void doInBackground() throws Exception {
-                    for (CartLine line : toSell) {
-                        Db.sellProduct(line.product, line.colour, line.weight, line.qty);
-                    }
-                    return null;
+                protected MercadoPagoPixClient.PixCharge doInBackground() throws Exception {
+                    return mpClient.criarCobranca(totalPix, "Venda IMS - " + toSell.size() + " item(ns)");
                 }
 
                 @Override
@@ -193,13 +249,13 @@ public class Sale {
                     root.setCursor(Cursor.getDefaultCursor());
                     confirmBtn.setEnabled(true);
                     try {
-                        get();
-                        cart.clear();
-                        cartModel.setRowCount(0);
-                        recalcTotal.run();
-                        JOptionPane.showMessageDialog(IMStart.frame, "Venda confirmada. Estoque atualizado.");
+                        MercadoPagoPixClient.PixCharge cobranca = get();
+                        PixPaymentDialog dialog = new PixPaymentDialog(IMStart.frame, mpClient, cobranca);
+                        if (dialog.aguardarPagamento() == PixPaymentDialog.Resultado.APROVADO) {
+                            darBaixaNoEstoque.run();
+                        }
                     } catch (Exception ex) {
-                        JOptionPane.showMessageDialog(IMStart.frame, "Não foi possível confirmar a venda.\n" + ex.getMessage(), "ERRO", JOptionPane.ERROR_MESSAGE);
+                        JOptionPane.showMessageDialog(IMStart.frame, "Não foi possível gerar o Pix.\n" + ex.getMessage(), "ERRO", JOptionPane.ERROR_MESSAGE);
                     }
                 }
             }.execute();
