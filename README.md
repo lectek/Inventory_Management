@@ -8,6 +8,24 @@ via Maven's `assembly` plugin; no external database server required — data
 is stored locally in a SQLite file. The interface (menus, labels, messages)
 is in Brazilian Portuguese.
 
+> ## ⚠️ Este repositório é o ambiente de TESTE — não é a produção real
+>
+> O computador de verdade da loja (Raj Blow Plast) recebeu, em
+> 01/09/2026, integrações feitas **direto nele**, fora do git: impressora
+> fiscal, leitor de código de barras e ajustes na tela de Venda. Nenhuma
+> dessas mudanças está neste repositório.
+>
+> O ambiente real de produção tem um repositório próprio, privado:
+> [`lectek/raj-blow-plast-producao`](https://github.com/lectek/raj-blow-plast-producao).
+> **Não instale as releases deste repositório (`Inventory_Management`) no
+> computador da loja sem antes confirmar que as mudanças de impressora
+> fiscal/scanner já foram capturadas** — senão elas são perdidas.
+>
+> A branch [`teste`](https://github.com/lectek/Inventory_Management/tree/teste)
+> deste repositório tem uma integração de pagamento Pix (Mercado Pago) em
+> andamento, que deve ser levada para o ambiente de produção separadamente
+> (ver repositório privado acima), não faz parte de nenhuma release ainda.
+
 ## Download (Windows install package)
 
 Download the ready-to-run package — **not** the "Source code" zip — from:
