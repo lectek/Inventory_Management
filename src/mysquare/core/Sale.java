@@ -192,7 +192,7 @@ public class Sale {
                     @Override
                     protected Void doInBackground() throws Exception {
                         for (CartLine line : toSell) {
-                            Db.sellProduct(line.product, line.colour, line.weight, line.qty);
+                            Db.sellProduct(line.product, line.colour, line.weight, line.qty, line.unitPrice);
                         }
                         return null;
                     }
