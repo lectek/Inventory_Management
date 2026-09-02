@@ -22,6 +22,7 @@ public class Db {
 	    	    HashMap<String, String> properties = u.getProperties();
 	            conn = DriverManager.getConnection(properties.get("dbDriver")+properties.get("dbSource"));
 	            migrateProductsTable(conn);
+	            migrateSoldRecordsTable(conn);
 	            System.out.println("Connection to Database has been established.");
 	        } 
 	    } catch (SQLException | IOException e) {
@@ -34,6 +35,11 @@ public class Db {
 		addColumnIfMissing(conn, "products", "pcode", "TEXT");
 		addColumnIfMissing(conn, "products", "pdesc", "TEXT");
 		addColumnIfMissing(conn, "products", "pprice", "REAL");
+	}
+
+	/** pprice on sold_records is the unit price at the moment of sale; NULL for older/non-priced dispatches. */
+	private static void migrateSoldRecordsTable(Connection conn) throws SQLException {
+		addColumnIfMissing(conn, "sold_records", "pprice", "REAL");
 	}
 
 	private static void addColumnIfMissing(Connection conn, String tableName, String columnName, String columnType) throws SQLException {
@@ -230,16 +236,21 @@ public class Db {
 		return rs;
 	}
 	
-	public static ResultSet sellProduct(String product, String colour, String weight, int qty) throws Exception{
+	public static ResultSet sellProduct(String product, String colour, String weight, int qty) throws Exception {
+		return sellProduct(product, colour, weight, qty, null);
+	}
+
+	/** Same as the 4-arg overload, but also records the unit price at the time of sale (pass null when there isn't one, e.g. a manual dispatch). */
+	public static ResultSet sellProduct(String product, String colour, String weight, int qty, Double price) throws Exception{
 		Connection conn = connect();
 		ResultSet rs = null;
-		
+
 		PreparedStatement ps1 = conn.prepareStatement("SELECT * FROM products WHERE pname=? AND pclr=? AND pwt=?;");
         ps1.setString(1, product);
 		ps1.setString(2, colour);
 		ps1.setString(3, weight);
 		rs = ps1.executeQuery();
-			
+
 		if (rs == null) {
 			System.out.println("Product Not Found!");
 		} else {
@@ -252,16 +263,38 @@ public class Db {
 			ps2.executeUpdate();
 		}
 
-		PreparedStatement ps3 = conn.prepareStatement("INSERT INTO sold_records VALUES (strftime('%d/%m/%Y %H:%M:%S','now','localtime'),?,?,?,?);");
+		PreparedStatement ps3 = conn.prepareStatement(
+				"INSERT INTO sold_records (timestamp, product, colour, weight, quantity, pprice) "
+				+ "VALUES (strftime('%d/%m/%Y %H:%M:%S','now','localtime'),?,?,?,?,?);");
 		ps3.setString(1, product);
 		ps3.setString(2, colour);
 		ps3.setString(3, weight);
 		ps3.setInt(4, qty);
+		if (price == null) {
+			ps3.setNull(5, java.sql.Types.REAL);
+		} else {
+			ps3.setDouble(5, price);
+		}
 		ps3.executeUpdate();
 		Statement s1 = conn.createStatement();
 		rs = s1.executeQuery("SELECT * FROM sold_records ORDER BY timestamp DESC;");
-	
+
 		return rs;
+	}
+
+	/** One row per calendar day that had at least one sale/dispatch: day, line count, total units, total value (0 where price wasn't recorded). */
+	public static ResultSet fetchSalesByDate() throws SQLException {
+		Connection conn = connect();
+		Statement stat = conn.createStatement();
+		return stat.executeQuery(
+				"SELECT substr(timestamp,1,10) AS dia, "
+				+ "COUNT(*) AS vendas, "
+				+ "SUM(quantity) AS itens, "
+				+ "SUM(quantity * COALESCE(pprice,0)) AS total "
+				+ "FROM sold_records "
+				+ "GROUP BY dia "
+				// dia is dd/MM/yyyy; reorder to yyyy-MM-dd so DESC sorts chronologically, not lexicographically.
+				+ "ORDER BY substr(dia,7,4) || substr(dia,4,2) || substr(dia,1,2) DESC;");
 	}
 	
 	public static ArrayList<String> fetchPList() {

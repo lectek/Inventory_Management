@@ -9,7 +9,7 @@ public class IMStart {
 	public static JFrame frame = new JFrame();
 	public static JMenuBar mb = new JMenuBar();
 	public static JMenu m1,m2,m3,m4;
-	public static JMenuItem m1i1, m2i1, m2i2, m2i3, m3i1,m4i1;
+	public static JMenuItem m1i1, m2i1, m2i2, m2i3, m2i4, m3i1,m4i1;
 	public static JScrollPane jScrollPane;
 
 	private static final String AJUDA_VENDA = "Escolha o produto, a cor, o peso e a quantidade e clique em \"Adicionar à venda\". "
@@ -26,6 +26,9 @@ public class IMStart {
 	private static final String AJUDA_ESTOQUE = "Esta tela mostra a quantidade atual de cada produto em estoque. "
 			+ "Para alterar o estoque, use as telas Venda, Produção (entrada) ou Despacho (saída), "
 			+ "ou edite diretamente em Modificar produtos.";
+	private static final String AJUDA_VENDAS_POR_DIA = "Resumo de tudo que foi vendido ou despachado, agrupado por dia: "
+			+ "número de vendas, total de itens e valor total. O valor só é somado para vendas feitas pela tela "
+			+ "Venda (que registra o preço); despachos manuais sem preço entram na contagem de itens mas não no total em R$.";
 	private static final String AJUDA_MODIFICAR = "Selecione um produto existente na lista para carregar seus dados. "
 			+ "Altere o que precisar (nome, cor, peso, quantidade, código, preço ou descrição) e clique em \"Salvar alterações\". "
 			+ "Para remover um produto do catálogo, selecione-o e clique em \"Excluir produto\" — "
@@ -44,12 +47,14 @@ public class IMStart {
 		m2i1 = new JMenuItem("Produção");
 		m2i2 = new JMenuItem("Despacho");
 		m2i3 = new JMenuItem("Estoque");
+		m2i4 = new JMenuItem("Vendas por dia");
 		m3i1 = new JMenuItem("Modificar produtos");
 		m4i1 = new JMenuItem("Sobre o software");
 		m1.add(m1i1);
 		m2.add(m2i1);
 		m2.add(m2i2);
 		m2.add(m2i3);
+		m2.add(m2i4);
 		m3.add(m3i1);
 		m4.add(m4i1);
 		mb.add(m1);
@@ -60,6 +65,7 @@ public class IMStart {
 		m2i1.setBackground(Theme.TABLE_HEADER_BG);
         m2i2.setBackground(Theme.TABLE_HEADER_BG);
         m2i3.setBackground(Theme.TABLE_HEADER_BG);
+        m2i4.setBackground(Theme.TABLE_HEADER_BG);
         m3i1.setBackground(Theme.TABLE_HEADER_BG);
         m4i1.setBackground(Theme.TABLE_HEADER_BG);
         mb.setBackground(Theme.SURFACE);
@@ -148,6 +154,20 @@ public class IMStart {
                     frame.setVisible(true);
                 }catch (Exception ex){
                     JOptionPane.showMessageDialog(frame,"Não foi possível obter o estoque.\nERRO:"+ex.getMessage(),"ERRO",JOptionPane.ERROR_MESSAGE);
+                }
+            });
+
+            m2i4.addActionListener(e -> {
+                try {
+                    frame.getContentPane().removeAll();
+                    jScrollPane = new JScrollPane(SalesReport.getSalesReportView());
+                    frame.getContentPane().add(BorderLayout.CENTER, jScrollPane);
+                    frame.getContentPane().add(BorderLayout.SOUTH, Theme.footer("Vendas por dia", AJUDA_VENDAS_POR_DIA));
+                    frame.getContentPane().doLayout();
+                    frame.update(frame.getGraphics());
+                    frame.setVisible(true);
+                }catch (Exception ex){
+                    JOptionPane.showMessageDialog(frame,"Não foi possível obter o relatório de vendas.\nERRO:"+ex.getMessage(),"ERRO",JOptionPane.ERROR_MESSAGE);
                 }
             });
 
