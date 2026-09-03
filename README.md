@@ -26,6 +26,43 @@ is in Brazilian Portuguese.
 > andamento, que deve ser levada para o ambiente de produção separadamente
 > (ver repositório privado acima), não faz parte de nenhuma release ainda.
 
+## O que precisa ser levado para a produção (raj-blow-plast-producao)
+
+Checklist do que já foi corrigido/adicionado aqui e ainda precisa ser
+conferido/aplicado no repositório privado. Cada item já foi replicado
+manualmente lá por uma sessão anterior do Claude Code, mas **essa cópia
+só existe localmente, ainda não enviada (push) ao GitHub** — confirme se
+já não está lá antes de reaplicar, para não duplicar trabalho.
+
+- **Bug do `Db.sellProduct` (faltava `rs.next()`)** — todo Despacho manual
+  (e, na branch `teste`, também toda venda) falhava e não descontava
+  estoque. Correção: trocar `if (rs == null) { ... }` por
+  `if (!rs.next()) { throw new Exception(...); } else { ... }`.
+  Commits: [`5ccd0ce`](https://github.com/lectek/Inventory_Management/commit/5ccd0ce) (master),
+  [`0a3b1f2`](https://github.com/lectek/Inventory_Management/commit/0a3b1f2) (teste).
+- **Aviso de produto duplicado na tela de Produção** — ao tentar
+  cadastrar um produto (nome+cor+peso) que já existe, agora avisa e
+  pergunta explicitamente quantos adicionar ao estoque, em vez de
+  mesclar silenciosamente usando a quantidade do formulário de "novo
+  produto". Commits: [`2c61356`](https://github.com/lectek/Inventory_Management/commit/2c61356) (master),
+  [`0011bab`](https://github.com/lectek/Inventory_Management/commit/0011bab) (teste).
+- **Cálculo de troco no pagamento em dinheiro** — ao confirmar venda em
+  Dinheiro, pergunta o valor recebido e mostra o troco.
+  Commits: [`e561ea8`](https://github.com/lectek/Inventory_Management/commit/e561ea8) (master),
+  [`5c94bfa`](https://github.com/lectek/Inventory_Management/commit/5c94bfa) (teste).
+  **Na produção, o troco também deve ser incluído no cupom impresso**
+  (`Receipt.print`) — isso não existe aqui porque este repositório não
+  imprime recibo; não copie o diff cegamente, adapte a chamada de
+  `Receipt.print` para receber a forma de pagamento/troco como linha
+  extra.
+
+Em todos os três casos: **não copie os arquivos inteiros** de um
+repositório para o outro — o de produção tem scanner, impressão de
+recibo, dropdowns dependentes e a tela de Configurações do Pix que este
+repositório não tem. Aplique cada correção como uma edição pontual no
+método/trecho equivalente, e depois rode `mvn clean package` e abra o
+app de verdade antes de considerar concluído.
+
 ## Download (Windows install package)
 
 Download the ready-to-run package — **not** the "Source code" zip — from:
