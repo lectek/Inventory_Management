@@ -169,12 +169,21 @@ public class Sale {
                 JOptionPane.showMessageDialog(IMStart.frame, "Adicione pelo menos um item primeiro.", "AVISO", JOptionPane.WARNING_MESSAGE);
                 return;
             }
+            double total = 0;
+            for (CartLine line : cart) {
+                total += line.subtotal();
+            }
             int confirm = JOptionPane.showConfirmDialog(IMStart.frame,
-                    "Confirmar venda de " + cart.size() + " item(ns) no valor total de " + totalLabel.getText().substring("Total: ".length()) + "?",
+                    "Confirmar venda de " + cart.size() + " item(ns) no valor total de " + String.format(PT_BR, "%.2f", total) + "?",
                     "Confirmar venda", JOptionPane.YES_NO_OPTION);
             if (confirm != JOptionPane.YES_OPTION) {
                 return;
             }
+            Double valorRecebido = perguntarValorRecebido(total);
+            if (valorRecebido == null) {
+                return;
+            }
+            double troco = valorRecebido - total;
 
             confirmBtn.setEnabled(false);
             root.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
@@ -197,7 +206,8 @@ public class Sale {
                         cart.clear();
                         cartModel.setRowCount(0);
                         recalcTotal.run();
-                        JOptionPane.showMessageDialog(IMStart.frame, "Venda confirmada. Estoque atualizado.");
+                        JOptionPane.showMessageDialog(IMStart.frame,
+                                "Venda confirmada. Estoque atualizado.\nTroco: " + String.format(PT_BR, "%.2f", troco));
                     } catch (Exception ex) {
                         JOptionPane.showMessageDialog(IMStart.frame, "Não foi possível confirmar a venda.\n" + ex.getMessage(), "ERRO", JOptionPane.ERROR_MESSAGE);
                     }
@@ -232,5 +242,34 @@ public class Sale {
         root.add(new JScrollPane(cartTable), BorderLayout.CENTER);
         root.add(bottom, BorderLayout.SOUTH);
         return root;
+    }
+
+    /**
+     * Asks the operator how much cash the customer handed over, re-asking on an invalid or
+     * insufficient amount. Returns null if the operator cancels (the sale itself is untouched).
+     */
+    private static Double perguntarValorRecebido(double total) {
+        while (true) {
+            String input = JOptionPane.showInputDialog(IMStart.frame,
+                    "Valor recebido do cliente (total da venda: " + String.format(PT_BR, "%.2f", total) + "):",
+                    "Pagamento em dinheiro", JOptionPane.QUESTION_MESSAGE);
+            if (input == null) {
+                return null;
+            }
+            double valor;
+            try {
+                valor = Double.parseDouble(input.trim().replace(",", "."));
+            } catch (NumberFormatException nfe) {
+                JOptionPane.showMessageDialog(IMStart.frame, "Valor inválido.", "AVISO", JOptionPane.WARNING_MESSAGE);
+                continue;
+            }
+            if (valor < total) {
+                JOptionPane.showMessageDialog(IMStart.frame,
+                        "Valor insuficiente. Faltam " + String.format(PT_BR, "%.2f", total - valor) + ".",
+                        "AVISO", JOptionPane.WARNING_MESSAGE);
+                continue;
+            }
+            return valor;
+        }
     }
 }
