@@ -251,8 +251,8 @@ public class Db {
 		ps1.setString(3, weight);
 		rs = ps1.executeQuery();
 
-		if (rs == null) {
-			System.out.println("Product Not Found!");
+		if (!rs.next()) {
+			throw new Exception("Produto não encontrado.");
 		} else {
 			int updtdQty = Integer.parseInt(rs.getString("pqt")) - qty;
 			PreparedStatement ps2 = conn.prepareStatement("UPDATE products SET pqt=? WHERE pname=? AND pclr=? AND pwt=?;");
