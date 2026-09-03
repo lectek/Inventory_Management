@@ -120,45 +120,54 @@ public class Production {
 
                 addBtn.setEnabled(false);
                 panel.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-                new SwingWorker<java.util.List<Object[]>, Void>() {
+                new SwingWorker<Boolean, Void>() {
                     @Override
-                    protected java.util.List<Object[]> doInBackground() throws Exception {
-                        Db.ensureListItem("product_list", "pname", product);
-                        Db.ensureListItem("colour_list", "pclr", colour);
-                        Db.ensureListItem("weight_list", "pwt", weight);
-                        ResultSet dataNew = Db.addProduct(product, colour, weight, qty);
-                        java.util.List<Object[]> rows = new java.util.ArrayList<>();
-                        while (dataNew.next()) {
-                            rows.add(new Object[]{dataNew.getString(1), dataNew.getString(2), dataNew.getString(3), dataNew.getString(4), dataNew.getString(5)});
-                        }
-                        if (hasDetails) {
-                            // Leaves code/description/price untouched on restock unless the operator typed something.
-                            Db.updateProduct(product, colour, weight, product, colour, weight, code, description, price);
-                        }
-                        return rows;
+                    protected Boolean doInBackground() throws Exception {
+                        return Db.fetchProduct(product, colour, weight).next();
                     }
 
                     @Override
                     protected void done() {
-                        panel.setCursor(Cursor.getDefaultCursor());
-                        addBtn.setEnabled(true);
+                        boolean jaExiste;
                         try {
-                            model.setRowCount(0);
-                            for (Object[] row : get()) {
-                                model.addRow(row);
-                            }
-                            if (!containsItem(cb1, product)) cb1.addItem(product);
-                            if (!containsItem(cb2, colour)) cb2.addItem(colour);
-                            if (!containsItem(cb3, weight)) cb3.addItem(weight);
-                            tf1.setText("");
-                            codeField.setText("");
-                            descriptionField.setText("");
-                            priceField.setText("");
-                        } catch (InterruptedException ie) {
-                            Thread.currentThread().interrupt();
-                        } catch (java.util.concurrent.ExecutionException e) {
-                            JOptionPane.showMessageDialog(IMStart.frame, "Não foi possível adicionar o produto.", "ERRO", JOptionPane.ERROR_MESSAGE);
+                            jaExiste = get();
+                        } catch (Exception ex) {
+                            panel.setCursor(Cursor.getDefaultCursor());
+                            addBtn.setEnabled(true);
+                            JOptionPane.showMessageDialog(IMStart.frame, "Não foi possível verificar o produto.", "ERRO", JOptionPane.ERROR_MESSAGE);
+                            return;
                         }
+
+                        if (!jaExiste) {
+                            executarAdicaoProduto(panel, addBtn, cb1, cb2, cb3, tf1, codeField, descriptionField, priceField,
+                                    product, colour, weight, qty, hasDetails, code, description, price);
+                            return;
+                        }
+
+                        panel.setCursor(Cursor.getDefaultCursor());
+                        JOptionPane.showMessageDialog(IMStart.frame,
+                                "Este produto (mesmo nome, cor e peso) já existe no estoque.",
+                                "Produto já existe", JOptionPane.INFORMATION_MESSAGE);
+                        String input = JOptionPane.showInputDialog(IMStart.frame,
+                                "Quantos você deseja adicionar ao estoque?", String.valueOf(qty));
+                        if (input == null) {
+                            addBtn.setEnabled(true);
+                            return;
+                        }
+                        int quantidadeAdicionar;
+                        try {
+                            quantidadeAdicionar = Integer.parseInt(input.trim());
+                            if (quantidadeAdicionar <= 0) {
+                                throw new NumberFormatException();
+                            }
+                        } catch (NumberFormatException nfe) {
+                            addBtn.setEnabled(true);
+                            JOptionPane.showMessageDialog(IMStart.frame, "Quantidade inválida.", "AVISO", JOptionPane.WARNING_MESSAGE);
+                            return;
+                        }
+                        panel.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+                        executarAdicaoProduto(panel, addBtn, cb1, cb2, cb3, tf1, codeField, descriptionField, priceField,
+                                product, colour, weight, quantidadeAdicionar, hasDetails, code, description, price);
                     }
                 }.execute();
             }
@@ -166,6 +175,55 @@ public class Production {
         panel.setBackground(Theme.SURFACE);
         panel.setBorder(Theme.sectionBorder("Adicionar produto"));
         return panel;
+    }
+
+    /** Writes the product (new or restock) plus optional code/description/price, then refreshes the form. */
+    private static void executarAdicaoProduto(JPanel panel, JButton addBtn,
+                                               JComboBox<String> cb1, JComboBox<String> cb2, JComboBox<String> cb3,
+                                               JTextField tf1, JTextField codeField, JTextField descriptionField, JTextField priceField,
+                                               String product, String colour, String weight, int qty,
+                                               boolean hasDetails, String code, String description, double price) {
+        new SwingWorker<java.util.List<Object[]>, Void>() {
+            @Override
+            protected java.util.List<Object[]> doInBackground() throws Exception {
+                Db.ensureListItem("product_list", "pname", product);
+                Db.ensureListItem("colour_list", "pclr", colour);
+                Db.ensureListItem("weight_list", "pwt", weight);
+                ResultSet dataNew = Db.addProduct(product, colour, weight, qty);
+                java.util.List<Object[]> rows = new java.util.ArrayList<>();
+                while (dataNew.next()) {
+                    rows.add(new Object[]{dataNew.getString(1), dataNew.getString(2), dataNew.getString(3), dataNew.getString(4), dataNew.getString(5)});
+                }
+                if (hasDetails) {
+                    // Leaves code/description/price untouched on restock unless the operator typed something.
+                    Db.updateProduct(product, colour, weight, product, colour, weight, code, description, price);
+                }
+                return rows;
+            }
+
+            @Override
+            protected void done() {
+                panel.setCursor(Cursor.getDefaultCursor());
+                addBtn.setEnabled(true);
+                try {
+                    model.setRowCount(0);
+                    for (Object[] row : get()) {
+                        model.addRow(row);
+                    }
+                    if (!containsItem(cb1, product)) cb1.addItem(product);
+                    if (!containsItem(cb2, colour)) cb2.addItem(colour);
+                    if (!containsItem(cb3, weight)) cb3.addItem(weight);
+                    tf1.setText("");
+                    codeField.setText("");
+                    descriptionField.setText("");
+                    priceField.setText("");
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                } catch (java.util.concurrent.ExecutionException e) {
+                    JOptionPane.showMessageDialog(IMStart.frame, "Não foi possível adicionar o produto.", "ERRO", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        }.execute();
     }
 
     private static boolean containsItem(JComboBox<String> box, String value) {
