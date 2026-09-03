@@ -22,9 +22,13 @@ is in Brazilian Portuguese.
 > fiscal/scanner já foram capturadas** — senão elas são perdidas.
 >
 > A branch [`teste`](https://github.com/lectek/Inventory_Management/tree/teste)
-> deste repositório tem uma integração de pagamento Pix (Mercado Pago) em
-> andamento, que deve ser levada para o ambiente de produção separadamente
-> (ver repositório privado acima), não faz parte de nenhuma release ainda.
+> deste repositório tem uma integração de pagamento Pix (Mercado Pago); o
+> código foi levado para o ambiente de produção (ver repositório privado
+> acima), **que já está com a conta do Mercado Pago conectada e
+> `MP_ACCESS_TOKEN` configurado** — o Pix já está ativo por lá, não é mais
+> uma pendência. Aqui na `teste` continua desativado (token vazio de
+> propósito, para não expor uma credencial real de produção neste
+> repositório público).
 
 ## O que precisa ser levado para a produção (raj-blow-plast-producao)
 
