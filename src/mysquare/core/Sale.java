@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.function.Consumer;
 
 /** A checkout screen: add items to a running sale, see the total, then confirm (deducts stock) or cancel. */
 public class Sale {
@@ -185,7 +186,7 @@ public class Sale {
             }
 
             List<CartLine> toSell = new ArrayList<CartLine>(cart);
-            Runnable darBaixaNoEstoque = () -> {
+            Consumer<Double> darBaixaNoEstoque = (troco) -> {
                 confirmBtn.setEnabled(false);
                 root.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
                 new SwingWorker<Void, Void>() {
@@ -206,7 +207,11 @@ public class Sale {
                             cart.clear();
                             cartModel.setRowCount(0);
                             recalcTotal.run();
-                            JOptionPane.showMessageDialog(IMStart.frame, "Venda confirmada. Estoque atualizado.");
+                            String msg = "Venda confirmada. Estoque atualizado.";
+                            if (troco != null) {
+                                msg += "\nTroco: " + String.format(PT_BR, "%.2f", troco);
+                            }
+                            JOptionPane.showMessageDialog(IMStart.frame, msg);
                         } catch (Exception ex) {
                             JOptionPane.showMessageDialog(IMStart.frame, "Não foi possível confirmar a venda.\n" + ex.getMessage(), "ERRO", JOptionPane.ERROR_MESSAGE);
                         }
@@ -215,7 +220,11 @@ public class Sale {
             };
 
             if (escolha == 0) {
-                darBaixaNoEstoque.run();
+                Double valorRecebido = perguntarValorRecebido(total);
+                if (valorRecebido == null) {
+                    return;
+                }
+                darBaixaNoEstoque.accept(valorRecebido - total);
                 return;
             }
 
@@ -252,7 +261,7 @@ public class Sale {
                         MercadoPagoPixClient.PixCharge cobranca = get();
                         PixPaymentDialog dialog = new PixPaymentDialog(IMStart.frame, mpClient, cobranca);
                         if (dialog.aguardarPagamento() == PixPaymentDialog.Resultado.APROVADO) {
-                            darBaixaNoEstoque.run();
+                            darBaixaNoEstoque.accept(null);
                         }
                     } catch (Exception ex) {
                         JOptionPane.showMessageDialog(IMStart.frame, "Não foi possível gerar o Pix.\n" + ex.getMessage(), "ERRO", JOptionPane.ERROR_MESSAGE);
@@ -288,5 +297,34 @@ public class Sale {
         root.add(new JScrollPane(cartTable), BorderLayout.CENTER);
         root.add(bottom, BorderLayout.SOUTH);
         return root;
+    }
+
+    /**
+     * Asks the operator how much cash the customer handed over, re-asking on an invalid or
+     * insufficient amount. Returns null if the operator cancels (the sale itself is untouched).
+     */
+    private static Double perguntarValorRecebido(double total) {
+        while (true) {
+            String input = JOptionPane.showInputDialog(IMStart.frame,
+                    "Valor recebido do cliente (total da venda: " + String.format(PT_BR, "%.2f", total) + "):",
+                    "Pagamento em dinheiro", JOptionPane.QUESTION_MESSAGE);
+            if (input == null) {
+                return null;
+            }
+            double valor;
+            try {
+                valor = Double.parseDouble(input.trim().replace(",", "."));
+            } catch (NumberFormatException nfe) {
+                JOptionPane.showMessageDialog(IMStart.frame, "Valor inválido.", "AVISO", JOptionPane.WARNING_MESSAGE);
+                continue;
+            }
+            if (valor < total) {
+                JOptionPane.showMessageDialog(IMStart.frame,
+                        "Valor insuficiente. Faltam " + String.format(PT_BR, "%.2f", total - valor) + ".",
+                        "AVISO", JOptionPane.WARNING_MESSAGE);
+                continue;
+            }
+            return valor;
+        }
     }
 }
