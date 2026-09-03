@@ -9,6 +9,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.TreeMap;
 
 public class Db {
 	
@@ -297,6 +299,71 @@ public class Db {
 				+ "ORDER BY substr(dia,7,4) || substr(dia,4,2) || substr(dia,1,2) DESC;");
 	}
 	
+	/**
+	 * One entry per day-of-month (1-31) that had at least one sale/dispatch in the given
+	 * month/year: {vendas, itens, total}. A Map (not a ResultSet, unlike the rest of this class)
+	 * because the calendar screen needs O(1) lookup per day while drawing up to 31 grid cells.
+	 */
+	public static Map<Integer, double[]> fetchMonthSummary(int year, int month) throws SQLException {
+		Connection conn = connect();
+		PreparedStatement ps = conn.prepareStatement(
+				"SELECT CAST(substr(timestamp,1,2) AS INTEGER) AS dia, "
+				+ "COUNT(*) AS vendas, "
+				+ "SUM(quantity) AS itens, "
+				+ "SUM(quantity * COALESCE(pprice,0)) AS total "
+				+ "FROM sold_records "
+				+ "WHERE substr(timestamp,4,2)=? AND substr(timestamp,7,4)=? "
+				+ "GROUP BY dia;");
+		ps.setString(1, String.format("%02d", month));
+		ps.setString(2, String.format("%04d", year));
+		ResultSet rs = ps.executeQuery();
+		Map<Integer, double[]> byDay = new TreeMap<Integer, double[]>();
+		while (rs.next()) {
+			byDay.put(rs.getInt("dia"), new double[]{rs.getInt("vendas"), rs.getInt("itens"), rs.getDouble("total")});
+		}
+		return byDay;
+	}
+
+	/** Every sold_records line for one exact calendar day ("dd/MM/yyyy"), oldest first. */
+	public static ResultSet fetchSalesForDay(String diaBr) throws SQLException {
+		Connection conn = connect();
+		PreparedStatement ps = conn.prepareStatement(
+				"SELECT timestamp, product, colour, weight, quantity, pprice FROM sold_records "
+				+ "WHERE substr(timestamp,1,10)=? ORDER BY timestamp;");
+		ps.setString(1, diaBr);
+		return ps.executeQuery();
+	}
+
+	/** Gross revenue (quantity * pprice, unpriced dispatches count as 0) for today, this month, this year and all time. */
+	public static class RevenueSummary {
+		public final double hoje, mes, ano, total;
+		RevenueSummary(double hoje, double mes, double ano, double total) {
+			this.hoje = hoje;
+			this.mes = mes;
+			this.ano = ano;
+			this.total = total;
+		}
+	}
+
+	public static RevenueSummary fetchRevenueSummary() throws SQLException {
+		Connection conn = connect();
+		Statement stat = conn.createStatement();
+		// dd/MM/yyyy -> yyyy-MM-dd once in a subquery, then compared against SQLite's own date/strftime output.
+		ResultSet rs = stat.executeQuery(
+				"SELECT "
+				+ "SUM(CASE WHEN iso = date('now','localtime') THEN valor ELSE 0 END) AS hoje, "
+				+ "SUM(CASE WHEN substr(iso,1,7) = strftime('%Y-%m','now','localtime') THEN valor ELSE 0 END) AS mes, "
+				+ "SUM(CASE WHEN substr(iso,1,4) = strftime('%Y','now','localtime') THEN valor ELSE 0 END) AS ano, "
+				+ "SUM(valor) AS total "
+				+ "FROM (SELECT quantity * COALESCE(pprice,0) AS valor, "
+				+ "substr(timestamp,7,4) || '-' || substr(timestamp,4,2) || '-' || substr(timestamp,1,2) AS iso "
+				+ "FROM sold_records);");
+		if (rs.next()) {
+			return new RevenueSummary(rs.getDouble("hoje"), rs.getDouble("mes"), rs.getDouble("ano"), rs.getDouble("total"));
+		}
+		return new RevenueSummary(0, 0, 0, 0);
+	}
+
 	public static ArrayList<String> fetchPList() {
 		ResultSet rs = null;
 		Connection conn = connect();

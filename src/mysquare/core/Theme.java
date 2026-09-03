@@ -21,15 +21,16 @@ import java.net.URI;
 
 final class Theme {
 
-    static final Color BACKGROUND = new Color(0xF4, 0xF2, 0xEC);
+    // Paleta: vermelho paixão + azul marinho + branco bebê.
+    static final Color BACKGROUND = new Color(0xFD, 0xF6, 0xF3);
     static final Color SURFACE = new Color(0xFF, 0xFF, 0xFF);
-    static final Color BORDER = new Color(0xD8, 0xD6, 0xC9);
-    static final Color ACCENT = new Color(0x2F, 0x6F, 0x62);
-    static final Color ACCENT_DARK = new Color(0x21, 0x50, 0x46);
-    static final Color TEXT = new Color(0x1C, 0x24, 0x30);
-    static final Color TEXT_MUTED = new Color(0x55, 0x5F, 0x6B);
-    static final Color TABLE_HEADER_BG = new Color(0xEA, 0xE8, 0xE0);
-    static final Color TABLE_STRIPE = new Color(0xF7, 0xF6, 0xF1);
+    static final Color BORDER = new Color(0xE6, 0xDA, 0xD4);
+    static final Color ACCENT = new Color(0xC8, 0x10, 0x2E);
+    static final Color ACCENT_DARK = new Color(0x0F, 0x1B, 0x33);
+    static final Color TEXT = new Color(0x1B, 0x2A, 0x44);
+    static final Color TEXT_MUTED = new Color(0x51, 0x60, 0x7A);
+    static final Color TABLE_HEADER_BG = new Color(0xF2, 0xE3, 0xDE);
+    static final Color TABLE_STRIPE = new Color(0xFA, 0xF3, 0xEF);
 
     static final Font FONT_LABEL = new Font("SansSerif", Font.PLAIN, 18);
     static final Font FONT_FIELD = new Font("SansSerif", Font.PLAIN, 19);

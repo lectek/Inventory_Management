@@ -1,6 +1,6 @@
 # Inventory Management (IMS)
 
-Version 1.0.7 — built with Java Swing + SQLite.
+Version 1.0.8 — built with Java Swing + SQLite.
 
 Stand-alone desktop app for tracking sales, production, dispatch and stock
 of products (name / colour / weight). Packaged as a single executable JAR
@@ -67,17 +67,39 @@ repositório não tem. Aplique cada correção como uma edição pontual no
 método/trecho equivalente, e depois rode `mvn clean package` e abra o
 app de verdade antes de considerar concluído.
 
+Além desses três, as telas **Home** (tela inicial) e **Calendário de
+vendas** (v1.0.8) também ainda não existem na produção — assim como
+"Vendas por dia", já citado no aviso do topo deste README. Diferente dos
+três itens acima, aqui não é uma correção pontual: ao portar, adapte
+`Home.java` para incluir também os botões das telas que só existem na
+produção (Configurações do Pix, etc.) e confira se o `IMStart` de lá tem a
+mesma estrutura de `showX()`/`showScreen()` antes de tentar reaproveitar o
+código como está.
+
 ## Download (Windows install package)
 
 Download the ready-to-run package — **not** the "Source code" zip — from:
 
-**https://github.com/lectek/Inventory_Management/releases/download/v1.0.7/IMS-1.0.7-win.zip**
+**https://github.com/lectek/Inventory_Management/releases/download/v1.0.8/IMS-1.0.8-win.zip**
 
-It contains `IMS-1.0.7.jar`, `ims_files/` (config + sample DB) and
+It contains `IMS-1.0.8.jar`, `ims_files/` (config + sample DB) and
 `INSTALL.txt`. See [Installing on Windows](#installing-on-windows) below.
 
 ## Release notes
 
+- **1.0.8:** New **Home** screen (Início) as the app's landing page: quick-access
+  buttons to every other screen, plus a gross-revenue panel that toggles
+  between today / this month / this year / all time (`Db.fetchRevenueSummary`,
+  one query, cached client-side so switching period is instant). New
+  **Calendário** screen: a month grid where each day shows its gross revenue
+  at a glance and clicking a day lists the individual sales made on it
+  (`Db.fetchMonthSummary`, `Db.fetchSalesForDay`) — a more visual complement
+  to the existing "Vendas por dia" table, which stays as-is. `IMStart`'s
+  screen-switching code (repeated 6 times) was consolidated into one
+  `showScreen` helper plus one `showX()` method per screen, with identical
+  behaviour/error messages; the app now opens on Home instead of Estoque.
+  Also refreshed the colour palette (`Theme.java`) to a passion-red / navy /
+  baby-white look across every screen.
 - **1.0.7:** New **Vendas por dia** (Sales by day) screen: every sale/dispatch
   grouped by calendar day, with number of sales, total items, and total
   value. `sold_records` gained a `pprice` column so the Sale screen now
@@ -152,7 +174,7 @@ sample-data/
 mvn clean package
 ```
 
-This produces `target/IMS-1.0.7.jar`, a fat JAR with all dependencies
+This produces `target/IMS-1.0.8.jar`, a fat JAR with all dependencies
 (including the SQLite driver) and `mysquare.core.IMStart` as the main class.
 
 ## Configuration — read this carefully
@@ -195,12 +217,12 @@ SQLite file); only the location of `config.properties` itself is fixed.
      `rbp-sample.db` to `rbp.db` and place it there to start with an empty
      database.
 
-3. Create `C:\ControleEstoque\programa\` and place `IMS-1.0.7.jar` inside.
+3. Create `C:\ControleEstoque\programa\` and place `IMS-1.0.8.jar` inside.
 
 4. Run it:
    ```cmd
    cd /d C:\ControleEstoque\programa
-   java -jar IMS-1.0.7.jar
+   java -jar IMS-1.0.8.jar
    ```
 
 5. On first connection the app auto-migrates the `products` table (adds
@@ -217,6 +239,6 @@ in this repository.
 
 ## Releasing
 
-See the project's release process for how `IMS-1.0.7.jar` +
+See the project's release process for how `IMS-1.0.8.jar` +
 `ims_files/config.properties` + `sample-data/rbp-sample.db` are packaged
 into a downloadable ZIP for installation.
