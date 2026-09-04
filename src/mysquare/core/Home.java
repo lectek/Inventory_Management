@@ -57,7 +57,7 @@ public class Home {
         nav.add(navButton("Modificar produtos", IMStart::showModificarProdutos));
         nav.add(navButton("Chat com clientes", IMStart::showChat));
         nav.add(navButton("Loja Online", IMStart::abrirLojaOnline));
-        nav.add(navButton("Acesso admin do site", IMStart::showAdminSaas));
+        nav.add(navButton("Acessos do site", IMStart::showAdminSaas));
         return nav;
     }
 

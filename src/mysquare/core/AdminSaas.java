@@ -7,10 +7,13 @@ import java.awt.*;
 import java.util.ArrayList;
 
 /**
- * Cria/atualiza o login administrativo do site (SaaS) — de propósito, o único
- * lugar que faz isso é aqui, no IMS. O SaaS nunca se auto-cadastra como admin,
- * então só quem tem acesso a este programa (o dono da loja) consegue criar ou
- * trocar esse acesso.
+ * Cria/atualiza os acessos ao site (SaaS) — de propósito, o único lugar que
+ * faz isso é aqui, no IMS. O SaaS nunca se auto-cadastra, então só quem tem
+ * acesso a este programa (o dono da loja) consegue criar ou trocar acesso.
+ *
+ * Cobre dois papéis na mesma tela: "Admin" (painel administrativo do site) e
+ * "Motoboy" (área de entregas no celular do entregador, com % de comissão
+ * sobre o frete de cada entrega).
  */
 public class AdminSaas {
 
@@ -20,6 +23,9 @@ public class AdminSaas {
     private static JTextField emailField;
     private static JPasswordField senhaField;
     private static JPasswordField confirmarField;
+    private static JRadioButton roleAdminRadio;
+    private static JRadioButton roleMotoboyRadio;
+    private static JTextField comissaoField;
     private static JLabel statusLabel;
 
     public static JPanel getPanel() {
@@ -31,7 +37,7 @@ public class AdminSaas {
         adminList = new JList<String>(adminListModel);
         adminList.setFont(Theme.FONT_LABEL);
         JScrollPane listScroll = new JScrollPane(adminList);
-        listScroll.setBorder(Theme.sectionBorder("Acessos administrativos atuais"));
+        listScroll.setBorder(Theme.sectionBorder("Acessos atuais"));
         listScroll.setPreferredSize(new Dimension(320, 300));
 
         JButton refreshBtn = new JButton("Atualizar lista");
@@ -52,6 +58,7 @@ public class AdminSaas {
         emailField = new JTextField();
         senhaField = new JPasswordField();
         confirmarField = new JPasswordField();
+        comissaoField = new JTextField("70");
 
         form.add(campo("Nome", nomeField));
         form.add(Box.createVerticalStrut(10));
@@ -62,19 +69,48 @@ public class AdminSaas {
         form.add(campo("Confirmar senha", confirmarField));
         form.add(Box.createVerticalStrut(16));
 
+        JLabel tipoLabel = new JLabel("Tipo de acesso");
+        tipoLabel.setFont(Theme.FONT_LABEL);
+        tipoLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        roleAdminRadio = new JRadioButton("Admin (painel administrativo)", true);
+        roleMotoboyRadio = new JRadioButton("Motoboy (entregas pelo celular)");
+        roleAdminRadio.setFont(Theme.FONT_LABEL);
+        roleMotoboyRadio.setFont(Theme.FONT_LABEL);
+        roleAdminRadio.setOpaque(false);
+        roleMotoboyRadio.setOpaque(false);
+        roleAdminRadio.setAlignmentX(Component.LEFT_ALIGNMENT);
+        roleMotoboyRadio.setAlignmentX(Component.LEFT_ALIGNMENT);
+        ButtonGroup roleGroup = new ButtonGroup();
+        roleGroup.add(roleAdminRadio);
+        roleGroup.add(roleMotoboyRadio);
+
+        JPanel comissaoPanel = campo("% de comissão do motoboy sobre o frete de cada entrega", comissaoField);
+        comissaoPanel.setVisible(false);
+
+        roleAdminRadio.addActionListener(e -> comissaoPanel.setVisible(false));
+        roleMotoboyRadio.addActionListener(e -> comissaoPanel.setVisible(true));
+
+        form.add(tipoLabel);
+        form.add(roleAdminRadio);
+        form.add(roleMotoboyRadio);
+        form.add(Box.createVerticalStrut(10));
+        form.add(comissaoPanel);
+        form.add(Box.createVerticalStrut(16));
+
         statusLabel = new JLabel(" ");
         statusLabel.setFont(Theme.FONT_LABEL);
         statusLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JButton salvarBtn = new JButton("Salvar acesso administrativo");
+        JButton salvarBtn = new JButton("Salvar acesso");
         salvarBtn.setFont(Theme.FONT_BUTTON);
         salvarBtn.setBackground(Theme.ACCENT);
         salvarBtn.setForeground(Color.WHITE);
         salvarBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
         salvarBtn.addActionListener(e -> salvar(salvarBtn));
 
-        JLabel aviso = new JLabel("<html><body style='width:280px'>Se o e-mail já existir, a senha e o nome "
-                + "são atualizados. Se não existir, um novo acesso é criado.</body></html>");
+        JLabel aviso = new JLabel("<html><body style='width:280px'>Se o e-mail já existir, os dados são "
+                + "atualizados (inclusive o tipo de acesso). Se não existir, um novo acesso é criado.</body></html>");
         aviso.setFont(Theme.FONT_LABEL);
         aviso.setForeground(Theme.TEXT_MUTED);
         aviso.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -113,26 +149,30 @@ public class AdminSaas {
     }
 
     private static void carregarAdmins() {
-        new SwingWorker<ArrayList<String>, Void>() {
+        new SwingWorker<ArrayList<Db.AdminSaasAccount>, Void>() {
             @Override
-            protected ArrayList<String> doInBackground() {
-                return Db.fetchAdminEmails();
+            protected ArrayList<Db.AdminSaasAccount> doInBackground() {
+                return Db.fetchAdminAccounts();
             }
 
             @Override
             protected void done() {
-                ArrayList<String> emails;
+                ArrayList<Db.AdminSaasAccount> contas;
                 try {
-                    emails = get();
+                    contas = get();
                 } catch (Exception ex) {
-                    emails = new ArrayList<String>();
+                    contas = new ArrayList<Db.AdminSaasAccount>();
                 }
                 adminListModel.clear();
-                if (emails.isEmpty()) {
+                if (contas.isEmpty()) {
                     adminListModel.addElement("(nenhum acesso criado ainda)");
                 }
-                for (String email : emails) {
-                    adminListModel.addElement(email);
+                for (Db.AdminSaasAccount conta : contas) {
+                    String rotulo = conta.email + " — " + conta.role;
+                    if ("MOTOBOY".equals(conta.role) && conta.percentualComissao != null) {
+                        rotulo += " (" + conta.percentualComissao + "%)";
+                    }
+                    adminListModel.addElement(rotulo);
                 }
             }
         }.execute();
@@ -143,6 +183,7 @@ public class AdminSaas {
         String email = emailField.getText().trim().toLowerCase();
         char[] senha = senhaField.getPassword();
         char[] confirmar = confirmarField.getPassword();
+        boolean isMotoboy = roleMotoboyRadio.isSelected();
 
         if (nome.isEmpty() || email.isEmpty() || senha.length == 0) {
             statusLabel.setForeground(Theme.ACCENT);
@@ -160,6 +201,19 @@ public class AdminSaas {
             return;
         }
 
+        Double percentualComissao = null;
+        if (isMotoboy) {
+            try {
+                percentualComissao = Double.parseDouble(comissaoField.getText().trim().replace(",", "."));
+            } catch (NumberFormatException ex) {
+                statusLabel.setForeground(Theme.ACCENT);
+                statusLabel.setText("Percentual de comissão inválido.");
+                return;
+            }
+        }
+        final Double comissaoFinal = percentualComissao;
+        final String role = isMotoboy ? "MOTOBOY" : "ADMIN";
+
         String senhaHash = BCrypt.hashpw(new String(senha), BCrypt.gensalt());
         java.util.Arrays.fill(senha, '\0');
         java.util.Arrays.fill(confirmar, '\0');
@@ -171,7 +225,7 @@ public class AdminSaas {
         new SwingWorker<Void, Void>() {
             @Override
             protected Void doInBackground() throws Exception {
-                Db.salvarAdminSaas(nome, email, senhaHash);
+                Db.salvarAdminSaas(nome, email, senhaHash, role, comissaoFinal);
                 return null;
             }
 
@@ -189,7 +243,7 @@ public class AdminSaas {
                     statusLabel.setForeground(Theme.ACCENT);
                     statusLabel.setText("Não foi possível salvar. O site (SaaS) já rodou nesta máquina alguma vez?");
                     JOptionPane.showMessageDialog(IMStart.frame,
-                            "Não foi possível salvar o acesso administrativo.\nERRO:" + ex.getMessage(),
+                            "Não foi possível salvar o acesso.\nERRO:" + ex.getMessage(),
                             "ERRO", JOptionPane.ERROR_MESSAGE);
                 }
             }

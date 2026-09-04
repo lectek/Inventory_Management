@@ -46,10 +46,12 @@ public class IMStart {
 			+ "Clique numa conversa para ver o histórico e marcar como lida; digite a resposta embaixo e clique em "
 			+ "\"Enviar\" (ou aperte Enter). Se a lista estiver vazia, ainda não há conversas ou o site (SaaS) nunca rodou "
 			+ "nesta máquina ainda.";
-	private static final String AJUDA_ADMIN_SAAS = "Crie ou atualize aqui o login administrativo do site (SaaS). "
-			+ "Este é o único lugar onde esse acesso é criado — o site não permite se auto-cadastrar como "
-			+ "administrador. Preencha nome, e-mail e senha e clique em \"Salvar acesso administrativo\"; "
-			+ "se o e-mail já existir, a senha é atualizada.";
+	private static final String AJUDA_ADMIN_SAAS = "Crie ou atualize aqui os acessos ao site (SaaS). "
+			+ "Este é o único lugar onde esses acessos são criados — o site não permite se auto-cadastrar. "
+			+ "Escolha o tipo: \"Admin\" pra mexer no painel administrativo, ou \"Motoboy\" pra entrar na "
+			+ "área de entregas pelo celular (nesse caso, defina também o % de comissão dele sobre o frete "
+			+ "de cada entrega). Preencha os dados e clique em \"Salvar acesso\"; se o e-mail já existir, "
+			+ "os dados (inclusive o tipo) são atualizados.";
 
 	IMStart(){
 		m0 = new JMenu("Início");
@@ -71,7 +73,7 @@ public class IMStart {
 		m2i5 = new JMenuItem("Calendário");
 		m2i6 = new JMenuItem("Chat com clientes");
 		m3i1 = new JMenuItem("Modificar produtos");
-		m3i2 = new JMenuItem("Acesso admin do site");
+		m3i2 = new JMenuItem("Acessos do site");
 		m4i1 = new JMenuItem("Sobre o software");
 		m0.add(m0i1);
 		m1.add(m1i1);
@@ -171,7 +173,7 @@ public class IMStart {
 	}
 
 	public static void showAdminSaas() {
-		showScreen(AdminSaas::getPanel, () -> Theme.footer("Acesso admin do site", AJUDA_ADMIN_SAAS),
+		showScreen(AdminSaas::getPanel, () -> Theme.footer("Acessos do site", AJUDA_ADMIN_SAAS),
 				"Não foi possível abrir a tela de acesso administrativo.");
 	}
 

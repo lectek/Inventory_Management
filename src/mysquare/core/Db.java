@@ -526,15 +526,34 @@ public class Db {
 	 * Acesso administrativo do site (SaaS): tabela admin_users vive na mesma rbp.db,
 	 * criada pelo SaaS na primeira vez que ele roda. O IMS é o único lugar que cria/
 	 * atualiza esses logins — o SaaS não se auto-cadastra, só o dono da loja, por aqui.
+	 * A mesma tabela cobre dois papéis: role="ADMIN" (painel administrativo) e
+	 * role="MOTOBOY" (área de entregas no celular, com comissão sobre o frete).
 	 */
-	public static ArrayList<String> fetchAdminEmails() {
-		ArrayList<String> out = new ArrayList<String>();
+	public static class AdminSaasAccount {
+		public final String email;
+		public final String role;
+		public final Double percentualComissao;
+
+		AdminSaasAccount(String email, String role, Double percentualComissao) {
+			this.email = email;
+			this.role = role;
+			this.percentualComissao = percentualComissao;
+		}
+	}
+
+	public static ArrayList<AdminSaasAccount> fetchAdminAccounts() {
+		ArrayList<AdminSaasAccount> out = new ArrayList<AdminSaasAccount>();
 		Connection conn = connect();
 		try {
 			Statement s = conn.createStatement();
-			ResultSet rs = s.executeQuery("SELECT email FROM admin_users ORDER BY id;");
+			ResultSet rs = s.executeQuery("SELECT email, role, percentual_comissao FROM admin_users ORDER BY id;");
 			while (rs.next()) {
-				out.add(rs.getString("email"));
+				double comissao = rs.getDouble("percentual_comissao");
+				out.add(new AdminSaasAccount(
+						rs.getString("email"),
+						rs.getString("role"),
+						rs.wasNull() ? null : comissao
+				));
 			}
 		} catch (SQLException e) {
 			// Tabela ainda não existe (SaaS nunca rodou): tela mostra vazio, não trava o IMS.
@@ -543,15 +562,26 @@ public class Db {
 		return out;
 	}
 
-	/** Cria o acesso se o e-mail ainda não existe, ou atualiza nome/senha se já existir. */
-	public static void salvarAdminSaas(String nome, String email, String senhaHash) throws SQLException {
+	/**
+	 * Cria o acesso se o e-mail ainda não existe, ou atualiza nome/senha/role/comissão
+	 * se já existir. percentualComissao só faz sentido pra role="MOTOBOY" — passe null
+	 * pra "ADMIN".
+	 */
+	public static void salvarAdminSaas(String nome, String email, String senhaHash, String role, Double percentualComissao) throws SQLException {
 		Connection conn = connect();
 		PreparedStatement ps = conn.prepareStatement(
-				"INSERT INTO admin_users (nome, email, senha_hash, role, ativo) VALUES (?, ?, ?, 'ADMIN', 1) "
-				+ "ON CONFLICT(email) DO UPDATE SET nome = excluded.nome, senha_hash = excluded.senha_hash, ativo = 1;");
+				"INSERT INTO admin_users (nome, email, senha_hash, role, ativo, percentual_comissao) VALUES (?, ?, ?, ?, 1, ?) "
+				+ "ON CONFLICT(email) DO UPDATE SET nome = excluded.nome, senha_hash = excluded.senha_hash, "
+				+ "role = excluded.role, percentual_comissao = excluded.percentual_comissao, ativo = 1;");
 		ps.setString(1, nome);
 		ps.setString(2, email);
 		ps.setString(3, senhaHash);
+		ps.setString(4, role);
+		if (percentualComissao == null) {
+			ps.setNull(5, java.sql.Types.REAL);
+		} else {
+			ps.setDouble(5, percentualComissao);
+		}
 		ps.executeUpdate();
 	}
 }
