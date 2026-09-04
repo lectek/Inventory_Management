@@ -29,6 +29,7 @@ public class Utility {
 			properties.put("dbDriver", prop.getProperty("DB_DRIVER"));
 			properties.put("mpAccessToken", prop.getProperty("MP_ACCESS_TOKEN", ""));
 			properties.put("mpPayerEmail", prop.getProperty("MP_PAYER_EMAIL_PADRAO", ""));
+			properties.put("saasAdminUrl", prop.getProperty("SAAS_ADMIN_URL", ""));
 
 		} catch (Exception e) {
 			System.out.println("Exception: " + e);

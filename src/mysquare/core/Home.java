@@ -55,6 +55,8 @@ public class Home {
         nav.add(navButton("Calendário de vendas", IMStart::showCalendario));
         nav.add(navButton("Vendas por dia", IMStart::showVendasPorDia));
         nav.add(navButton("Modificar produtos", IMStart::showModificarProdutos));
+        nav.add(navButton("Chat com clientes", IMStart::showChat));
+        nav.add(navButton("Loja Online", IMStart::abrirLojaOnline));
         return nav;
     }
 

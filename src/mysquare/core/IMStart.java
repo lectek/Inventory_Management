@@ -10,7 +10,7 @@ public class IMStart {
 	public static JFrame frame = new JFrame();
 	public static JMenuBar mb = new JMenuBar();
 	public static JMenu m0,m1,m2,m3,m4;
-	public static JMenuItem m0i1, m1i1, m2i1, m2i2, m2i3, m2i4, m2i5, m3i1,m4i1;
+	public static JMenuItem m0i1, m1i1, m2i1, m2i2, m2i3, m2i4, m2i5, m2i6, m3i1,m4i1;
 	public static JScrollPane jScrollPane;
 
 	private static final String AJUDA_HOME = "Tela inicial: use os botões para acessar rapidamente cada parte do sistema. "
@@ -41,6 +41,11 @@ public class IMStart {
 			+ "Altere o que precisar (nome, cor, peso, quantidade, código, preço ou descrição) e clique em \"Salvar alterações\". "
 			+ "Para remover um produto do catálogo, selecione-o e clique em \"Excluir produto\" — "
 			+ "isso não apaga o histórico de produção/despacho dele.";
+	private static final String AJUDA_CHAT = "Converse aqui com clientes que compraram ou mandaram mensagem pelo site. "
+			+ "A lista à esquerda mostra as conversas, com o número de mensagens novas entre parênteses. "
+			+ "Clique numa conversa para ver o histórico e marcar como lida; digite a resposta embaixo e clique em "
+			+ "\"Enviar\" (ou aperte Enter). Se a lista estiver vazia, ainda não há conversas ou o site (SaaS) nunca rodou "
+			+ "nesta máquina ainda.";
 
 	IMStart(){
 		m0 = new JMenu("Início");
@@ -60,6 +65,7 @@ public class IMStart {
 		m2i3 = new JMenuItem("Estoque");
 		m2i4 = new JMenuItem("Vendas por dia");
 		m2i5 = new JMenuItem("Calendário");
+		m2i6 = new JMenuItem("Chat com clientes");
 		m3i1 = new JMenuItem("Modificar produtos");
 		m4i1 = new JMenuItem("Sobre o software");
 		m0.add(m0i1);
@@ -69,6 +75,7 @@ public class IMStart {
 		m2.add(m2i3);
 		m2.add(m2i4);
 		m2.add(m2i5);
+		m2.add(m2i6);
 		m3.add(m3i1);
 		m4.add(m4i1);
 		mb.add(m0);
@@ -83,6 +90,7 @@ public class IMStart {
         m2i3.setBackground(Theme.TABLE_HEADER_BG);
         m2i4.setBackground(Theme.TABLE_HEADER_BG);
         m2i5.setBackground(Theme.TABLE_HEADER_BG);
+        m2i6.setBackground(Theme.TABLE_HEADER_BG);
         m3i1.setBackground(Theme.TABLE_HEADER_BG);
         m4i1.setBackground(Theme.TABLE_HEADER_BG);
         mb.setBackground(Theme.SURFACE);
@@ -150,6 +158,34 @@ public class IMStart {
 				"Não foi possível obter o catálogo de produtos.");
 	}
 
+	public static void showChat() {
+		showScreen(Chat::getChatPanel, () -> Theme.footer("Chat com clientes", AJUDA_CHAT),
+				"Não foi possível abrir o chat.");
+	}
+
+	/** Abre a loja online (site) no navegador padrão, usando a URL configurada em config.properties (SAAS_ADMIN_URL). */
+	public static void abrirLojaOnline() {
+		String url;
+		try {
+			url = new Utility().getProperties().getOrDefault("saasAdminUrl", "");
+		} catch (Exception ex) {
+			url = "";
+		}
+		if (url == null || url.trim().isEmpty()) {
+			JOptionPane.showMessageDialog(frame,
+					"O endereço da loja online ainda não foi configurado.\nDefina SAAS_ADMIN_URL em config.properties.",
+					"Loja Online", JOptionPane.WARNING_MESSAGE);
+			return;
+		}
+		try {
+			java.awt.Desktop.getDesktop().browse(new java.net.URI(url.trim()));
+		} catch (Exception ex) {
+			JOptionPane.showMessageDialog(frame,
+					"Não foi possível abrir o navegador.\nURL: " + url + "\nERRO:" + ex.getMessage(),
+					"ERRO", JOptionPane.ERROR_MESSAGE);
+		}
+	}
+
 	public static void main(String[] args) {
         Theme.applyLookAndFeel();
         SwingUtilities.updateComponentTreeUI(frame);
@@ -176,6 +212,7 @@ public class IMStart {
             m2i3.addActionListener(e -> showEstoque());
             m2i4.addActionListener(e -> showVendasPorDia());
             m2i5.addActionListener(e -> showCalendario());
+            m2i6.addActionListener(e -> showChat());
             m3i1.addActionListener(e -> showModificarProdutos());
             m4i1.addActionListener(e -> JOptionPane.showMessageDialog(frame, dev_msg, "Sobre o software", JOptionPane.INFORMATION_MESSAGE));
 

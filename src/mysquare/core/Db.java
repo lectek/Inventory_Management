@@ -404,7 +404,7 @@ public class Db {
 		ResultSet rs = null;
 		Connection conn = connect();
 		ArrayList<String> wal = new ArrayList<String>();
-		
+
 		try {
 			Statement s1 = conn.createStatement();
 			rs = s1.executeQuery("SELECT * FROM weight_list ORDER BY pwt;");
@@ -414,7 +414,111 @@ public class Db {
 		} catch (SQLException e) {
 			System.out.println(e.getMessage());
 		}
-		
+
 		return wal;
+	}
+
+	/**
+	 * One row per customer who has at least one chat message. "customers" and "chat_messages"
+	 * are NOT owned by the IMS — they're created by the web SaaS the first time it runs against
+	 * this same rbp.db. If the SaaS has never run yet, those tables don't exist: this returns an
+	 * empty list instead of throwing, so the Chat screen just shows "no conversations" until then.
+	 */
+	public static class ChatConversation {
+		public final long customerId;
+		public final String nome;
+		public final String email;
+		public final String ultimaMensagem;
+		public final int naoLidas;
+
+		ChatConversation(long customerId, String nome, String email, String ultimaMensagem, int naoLidas) {
+			this.customerId = customerId;
+			this.nome = nome;
+			this.email = email;
+			this.ultimaMensagem = ultimaMensagem;
+			this.naoLidas = naoLidas;
+		}
+	}
+
+	public static ArrayList<ChatConversation> fetchChatConversations() {
+		ArrayList<ChatConversation> out = new ArrayList<ChatConversation>();
+		Connection conn = connect();
+		try {
+			Statement s = conn.createStatement();
+			ResultSet rs = s.executeQuery(
+					"SELECT c.id, c.nome, c.email, "
+					+ " (SELECT mensagem FROM chat_messages m WHERE m.customer_id = c.id ORDER BY m.id DESC LIMIT 1) AS ultima_mensagem, "
+					+ " (SELECT COUNT(*) FROM chat_messages m WHERE m.customer_id = c.id AND m.remetente = 'cliente' AND m.lida = 0) AS nao_lidas "
+					+ "FROM customers c "
+					+ "WHERE EXISTS (SELECT 1 FROM chat_messages m WHERE m.customer_id = c.id) "
+					+ "ORDER BY (SELECT MAX(m.id) FROM chat_messages m WHERE m.customer_id = c.id) DESC;");
+			while (rs.next()) {
+				out.add(new ChatConversation(
+						rs.getLong("id"),
+						rs.getString("nome"),
+						rs.getString("email"),
+						rs.getString("ultima_mensagem"),
+						rs.getInt("nao_lidas")
+				));
+			}
+		} catch (SQLException e) {
+			// Tabela ainda não existe (SaaS nunca rodou) ou outro erro pontual: tela mostra vazio, não trava o IMS.
+			System.out.println(e.getMessage());
+		}
+		return out;
+	}
+
+	public static class ChatMessage {
+		public final long id;
+		public final String remetente;
+		public final String mensagem;
+		public final String criadoEm;
+
+		ChatMessage(long id, String remetente, String mensagem, String criadoEm) {
+			this.id = id;
+			this.remetente = remetente;
+			this.mensagem = mensagem;
+			this.criadoEm = criadoEm;
+		}
+	}
+
+	public static ArrayList<ChatMessage> fetchChatMessages(long customerId) {
+		ArrayList<ChatMessage> out = new ArrayList<ChatMessage>();
+		Connection conn = connect();
+		try {
+			PreparedStatement ps = conn.prepareStatement(
+					"SELECT id, remetente, mensagem, criado_em FROM chat_messages WHERE customer_id = ? ORDER BY id ASC;");
+			ps.setLong(1, customerId);
+			ResultSet rs = ps.executeQuery();
+			while (rs.next()) {
+				out.add(new ChatMessage(rs.getLong("id"), rs.getString("remetente"), rs.getString("mensagem"), rs.getString("criado_em")));
+			}
+		} catch (SQLException e) {
+			System.out.println(e.getMessage());
+		}
+		return out;
+	}
+
+	/** Marca como lidas as mensagens do cliente pra essa conversa (chamado ao abrir a conversa no IMS). */
+	public static void marcarChatComoLido(long customerId) {
+		Connection conn = connect();
+		try {
+			PreparedStatement ps = conn.prepareStatement(
+					"UPDATE chat_messages SET lida = 1 WHERE customer_id = ? AND remetente = 'cliente';");
+			ps.setLong(1, customerId);
+			ps.executeUpdate();
+		} catch (SQLException e) {
+			System.out.println(e.getMessage());
+		}
+	}
+
+	/** Grava a resposta da loja — já nasce "lida" (foi a própria loja que escreveu). */
+	public static void enviarRespostaChat(long customerId, String mensagem) throws SQLException {
+		Connection conn = connect();
+		PreparedStatement ps = conn.prepareStatement(
+				"INSERT INTO chat_messages (customer_id, remetente, mensagem, lida) VALUES (?, 'loja', ?, 1);");
+		ps.setLong(1, customerId);
+		ps.setString(2, mensagem);
+		ps.executeUpdate();
 	}
 }
