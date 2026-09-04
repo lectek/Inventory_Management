@@ -10,7 +10,7 @@ public class IMStart {
 	public static JFrame frame = new JFrame();
 	public static JMenuBar mb = new JMenuBar();
 	public static JMenu m0,m1,m2,m3,m4;
-	public static JMenuItem m0i1, m1i1, m2i1, m2i2, m2i3, m2i4, m2i5, m2i6, m3i1,m4i1;
+	public static JMenuItem m0i1, m1i1, m2i1, m2i2, m2i3, m2i4, m2i5, m2i6, m3i1, m3i2, m4i1;
 	public static JScrollPane jScrollPane;
 
 	private static final String AJUDA_HOME = "Tela inicial: use os botões para acessar rapidamente cada parte do sistema. "
@@ -46,6 +46,10 @@ public class IMStart {
 			+ "Clique numa conversa para ver o histórico e marcar como lida; digite a resposta embaixo e clique em "
 			+ "\"Enviar\" (ou aperte Enter). Se a lista estiver vazia, ainda não há conversas ou o site (SaaS) nunca rodou "
 			+ "nesta máquina ainda.";
+	private static final String AJUDA_ADMIN_SAAS = "Crie ou atualize aqui o login administrativo do site (SaaS). "
+			+ "Este é o único lugar onde esse acesso é criado — o site não permite se auto-cadastrar como "
+			+ "administrador. Preencha nome, e-mail e senha e clique em \"Salvar acesso administrativo\"; "
+			+ "se o e-mail já existir, a senha é atualizada.";
 
 	IMStart(){
 		m0 = new JMenu("Início");
@@ -67,6 +71,7 @@ public class IMStart {
 		m2i5 = new JMenuItem("Calendário");
 		m2i6 = new JMenuItem("Chat com clientes");
 		m3i1 = new JMenuItem("Modificar produtos");
+		m3i2 = new JMenuItem("Acesso admin do site");
 		m4i1 = new JMenuItem("Sobre o software");
 		m0.add(m0i1);
 		m1.add(m1i1);
@@ -77,6 +82,7 @@ public class IMStart {
 		m2.add(m2i5);
 		m2.add(m2i6);
 		m3.add(m3i1);
+		m3.add(m3i2);
 		m4.add(m4i1);
 		mb.add(m0);
 		mb.add(m1);
@@ -92,6 +98,7 @@ public class IMStart {
         m2i5.setBackground(Theme.TABLE_HEADER_BG);
         m2i6.setBackground(Theme.TABLE_HEADER_BG);
         m3i1.setBackground(Theme.TABLE_HEADER_BG);
+        m3i2.setBackground(Theme.TABLE_HEADER_BG);
         m4i1.setBackground(Theme.TABLE_HEADER_BG);
         mb.setBackground(Theme.SURFACE);
 	}
@@ -163,6 +170,11 @@ public class IMStart {
 				"Não foi possível abrir o chat.");
 	}
 
+	public static void showAdminSaas() {
+		showScreen(AdminSaas::getPanel, () -> Theme.footer("Acesso admin do site", AJUDA_ADMIN_SAAS),
+				"Não foi possível abrir a tela de acesso administrativo.");
+	}
+
 	/** Abre a loja online (site) no navegador padrão, usando a URL configurada em config.properties (SAAS_ADMIN_URL). */
 	public static void abrirLojaOnline() {
 		String url;
@@ -214,6 +226,7 @@ public class IMStart {
             m2i5.addActionListener(e -> showCalendario());
             m2i6.addActionListener(e -> showChat());
             m3i1.addActionListener(e -> showModificarProdutos());
+            m3i2.addActionListener(e -> showAdminSaas());
             m4i1.addActionListener(e -> JOptionPane.showMessageDialog(frame, dev_msg, "Sobre o software", JOptionPane.INFORMATION_MESSAGE));
 
             showHome();

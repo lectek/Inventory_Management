@@ -51,5 +51,12 @@
   		<artifactId>json</artifactId>
   		<version>20240303</version>
   	</dependency>
+  	<dependency>
+  		<!-- Mesmo formato de hash ($2a$) que o BCryptPasswordEncoder do SaaS usa,
+  		     pra senha criada aqui já bater com o login do site sem conversão. -->
+  		<groupId>org.mindrot</groupId>
+  		<artifactId>jbcrypt</artifactId>
+  		<version>0.4</version>
+  	</dependency>
   </dependencies>
 </project>

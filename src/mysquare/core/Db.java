@@ -521,4 +521,37 @@ public class Db {
 		ps.setString(2, mensagem);
 		ps.executeUpdate();
 	}
+
+	/**
+	 * Acesso administrativo do site (SaaS): tabela admin_users vive na mesma rbp.db,
+	 * criada pelo SaaS na primeira vez que ele roda. O IMS é o único lugar que cria/
+	 * atualiza esses logins — o SaaS não se auto-cadastra, só o dono da loja, por aqui.
+	 */
+	public static ArrayList<String> fetchAdminEmails() {
+		ArrayList<String> out = new ArrayList<String>();
+		Connection conn = connect();
+		try {
+			Statement s = conn.createStatement();
+			ResultSet rs = s.executeQuery("SELECT email FROM admin_users ORDER BY id;");
+			while (rs.next()) {
+				out.add(rs.getString("email"));
+			}
+		} catch (SQLException e) {
+			// Tabela ainda não existe (SaaS nunca rodou): tela mostra vazio, não trava o IMS.
+			System.out.println(e.getMessage());
+		}
+		return out;
+	}
+
+	/** Cria o acesso se o e-mail ainda não existe, ou atualiza nome/senha se já existir. */
+	public static void salvarAdminSaas(String nome, String email, String senhaHash) throws SQLException {
+		Connection conn = connect();
+		PreparedStatement ps = conn.prepareStatement(
+				"INSERT INTO admin_users (nome, email, senha_hash, role, ativo) VALUES (?, ?, ?, 'ADMIN', 1) "
+				+ "ON CONFLICT(email) DO UPDATE SET nome = excluded.nome, senha_hash = excluded.senha_hash, ativo = 1;");
+		ps.setString(1, nome);
+		ps.setString(2, email);
+		ps.setString(3, senhaHash);
+		ps.executeUpdate();
+	}
 }
