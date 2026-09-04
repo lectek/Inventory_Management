@@ -41,11 +41,6 @@ public class IMStart {
 			+ "Altere o que precisar (nome, cor, peso, quantidade, código, preço ou descrição) e clique em \"Salvar alterações\". "
 			+ "Para remover um produto do catálogo, selecione-o e clique em \"Excluir produto\" — "
 			+ "isso não apaga o histórico de produção/despacho dele.";
-	private static final String AJUDA_CHAT = "Converse aqui com clientes que compraram ou mandaram mensagem pelo site. "
-			+ "A lista à esquerda mostra as conversas, com o número de mensagens novas entre parênteses. "
-			+ "Clique numa conversa para ver o histórico e marcar como lida; digite a resposta embaixo e clique em "
-			+ "\"Enviar\" (ou aperte Enter). Se a lista estiver vazia, ainda não há conversas ou o site (SaaS) nunca rodou "
-			+ "nesta máquina ainda.";
 	private static final String AJUDA_ADMIN_SAAS = "Crie ou atualize aqui os acessos ao site (SaaS). "
 			+ "Este é o único lugar onde esses acessos são criados — o site não permite se auto-cadastrar. "
 			+ "Escolha o tipo: \"Admin\" pra mexer no painel administrativo, ou \"Motoboy\" pra entrar na "
@@ -71,7 +66,7 @@ public class IMStart {
 		m2i3 = new JMenuItem("Estoque");
 		m2i4 = new JMenuItem("Vendas por dia");
 		m2i5 = new JMenuItem("Calendário");
-		m2i6 = new JMenuItem("Chat com clientes");
+		m2i6 = new JMenuItem("WhatsApp Web");
 		m3i1 = new JMenuItem("Modificar produtos");
 		m3i2 = new JMenuItem("Acessos do site");
 		m4i1 = new JMenuItem("Sobre o software");
@@ -167,9 +162,15 @@ public class IMStart {
 				"Não foi possível obter o catálogo de produtos.");
 	}
 
-	public static void showChat() {
-		showScreen(Chat::getChatPanel, () -> Theme.footer("Chat com clientes", AJUDA_CHAT),
-				"Não foi possível abrir o chat.");
+	/** Abre o WhatsApp Web no navegador padrão — atendimento ao cliente é direto por lá, não por uma tela própria no IMS. */
+	public static void abrirWhatsAppWeb() {
+		try {
+			java.awt.Desktop.getDesktop().browse(new java.net.URI("https://web.whatsapp.com"));
+		} catch (Exception ex) {
+			JOptionPane.showMessageDialog(frame,
+					"Não foi possível abrir o navegador.\nERRO:" + ex.getMessage(),
+					"ERRO", JOptionPane.ERROR_MESSAGE);
+		}
 	}
 
 	public static void showAdminSaas() {
@@ -226,7 +227,7 @@ public class IMStart {
             m2i3.addActionListener(e -> showEstoque());
             m2i4.addActionListener(e -> showVendasPorDia());
             m2i5.addActionListener(e -> showCalendario());
-            m2i6.addActionListener(e -> showChat());
+            m2i6.addActionListener(e -> abrirWhatsAppWeb());
             m3i1.addActionListener(e -> showModificarProdutos());
             m3i2.addActionListener(e -> showAdminSaas());
             m4i1.addActionListener(e -> JOptionPane.showMessageDialog(frame, dev_msg, "Sobre o software", JOptionPane.INFORMATION_MESSAGE));
